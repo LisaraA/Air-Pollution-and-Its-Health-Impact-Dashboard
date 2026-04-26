@@ -1,61 +1,41 @@
-# ============================================================
-# app.py — Air Pollution & Health Impact in Europe
-# WHO/EEA Urban Air Quality Dataset · 2022
-# ============================================================
-# HOW TO RUN:
-#   1. Place this file in the same folder as DataExtract.csv
-#   2. pip install streamlit plotly pandas
-#   3. streamlit run app.py
-# ============================================================
-
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-# ============================================================
-# PAGE CONFIG
-# ============================================================
+# Page Layout
 
 st.set_page_config(
-    page_title="Air Pollution & Health Impact in Europe",
+    page_title="Air Pollution & Health Impact",
     page_icon="🌍",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 # ============================================================
-# CUSTOM CSS — clean, consistent design
+# CUSTOM CSS
 # ============================================================
 
 st.markdown("""
 <style>
-    /* Insight boxes */
     .insight-box {
-        background-color: #1c1f33;
+        background: linear-gradient(135deg, #1a1d2e 0%, #16192b 100%);
+        border: 1px solid #2e3250;
         border-left: 4px solid #4f8ef7;
-        border-radius: 6px;
-        padding: 12px 16px;
-        margin: 6px 0 18px 0;
-        font-size: 0.87rem;
+        border-radius: 8px;
+        padding: 14px 18px;
+        margin: 8px 0 16px 0;
+        font-size: 0.88rem;
         color: #b0b8d8;
-        line-height: 1.65;
+        line-height: 1.6;
     }
     .insight-box strong { color: #e8eaf0; }
-    .insight-box .hl    { color: #f7914f; font-weight: 600; }
-
-    /* Metric card tweak */
-    div[data-testid="metric-container"] {
-        background: #1c1f33;
-        border: 1px solid #2e3250;
-        border-radius: 8px;
-        padding: 12px 16px 10px;
-    }
+    .insight-box .highlight { color: #f7914f; font-weight: 600; }
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================
-# DATA LOADING & PREPARATION
+# LOAD & PREPARE DATA
 # ============================================================
 
 @st.cache_data
@@ -66,19 +46,20 @@ def load_data():
 
 df_raw = load_data()
 
-# Exclude supra-national aggregates
-SUPRA = ["All Countries",
-         "European Environment Agency Member Countries",
-         "European Union Countries"]
+SUPRA = [
+    "All Countries",
+    "European Environment Agency Member Countries",
+    "European Union Countries",
+]
 
-# Exclude catch-all age groups and rollup outcome to avoid double-counting
-AGE_EXCLUDE     = [">= 0 years of age", ">= 19 years of age"]
+# Only exclude the true catch-all age group — keep all meaningful bands
+AGE_EXCLUDE = [">= 0 years of age"]
+# FIX 2: Exclude "All causes" rollup to avoid double counting
 OUTCOME_EXCLUDE = ["All causes"]
 
 PW_COL  = "Air Pollution Population Weighted Average [ug/m3]"
 AVG_COL = "Air Pollution Average [ug/m3]"
 
-# Country-level rows (aggregated across all cities in a country)
 df_country = df_raw[
     (df_raw["City Or Territory"] == "All Urban Centres in a Country") &
     (~df_raw["Country Or Territory"].isin(SUPRA)) &
@@ -86,7 +67,6 @@ df_country = df_raw[
     (~df_raw["Outcome"].isin(OUTCOME_EXCLUDE))
 ].copy()
 
-# City-level rows
 df_cities = df_raw[
     (df_raw["City Or Territory"] != "All Urban Centres in a Country") &
     (~df_raw["Country Or Territory"].isin(SUPRA)) &
@@ -95,56 +75,59 @@ df_cities = df_raw[
 ].copy()
 
 # ============================================================
-# SIDEBAR — FILTERS
+# SIDEBAR FILTERS
+# FIX 1: All filters changed to multiselect
 # ============================================================
 
 with st.sidebar:
     st.markdown("## 🌍 Air Pollution")
     st.markdown("### Health Impact Dashboard")
-    st.markdown("Europe · 2022 · WHO 2021 AQG Baseline")
+    st.markdown("Europe · 2022 · WHO Baseline")
     st.markdown("---")
-    st.markdown("### 🔎 Global Filters")
-    st.caption("All charts update when you change a filter. Leave empty to include all.")
+    st.markdown("### 🔎 Filters")
+    st.caption("Leave a filter empty to include all options.")
 
+    # FIX 1 + FIX 2: multiselect, "All causes" removed
     outcome_opts = sorted(
         df_raw["Outcome"].dropna()
         .loc[~df_raw["Outcome"].isin(OUTCOME_EXCLUDE)]
         .unique().tolist()
     )
-    sel_outcome = st.multiselect("Health Outcome / Disease", options=outcome_opts)
+    sel_outcome = st.multiselect("Health Outcome", options=outcome_opts)
 
     pollutant_opts = sorted(df_raw["Air Pollutant"].dropna().unique().tolist())
     sel_poll = st.multiselect("Air Pollutant", options=pollutant_opts)
 
+    # >= 0 excluded as catch-all; >= 30 has no country-level records in this dataset
+    AGE_EXCLUDE_SIDEBAR = [">= 0 years of age", ">= 30 years of age"]
     age_opts = sorted(
         df_raw["Description Of Age Group"].dropna()
-        .loc[~df_raw["Description Of Age Group"].isin(AGE_EXCLUDE)]
+        .loc[~df_raw["Description Of Age Group"].isin(AGE_EXCLUDE_SIDEBAR)]
         .unique().tolist()
     )
     sel_age = st.multiselect("Age Group", options=age_opts)
 
-    sex_opts = sorted(df_raw["Sex"].dropna().unique().tolist())
-    sel_sex = st.multiselect("Sex", options=sex_opts)
+    indicator_opts = sorted(df_raw["Health Indicator"].dropna().unique().tolist())
+    sel_indicator = st.multiselect("Health Indicator", options=indicator_opts)
 
     st.markdown("---")
-    st.caption("📂 Data: WHO/EEA Urban Air Quality 2022\n37 countries · 973 cities · 3 pollutants")
+    st.caption("📂 WHO/EEA Urban Air Quality 2022\n37 countries · 973 cities · 3 pollutants")
 
 # ============================================================
-# APPLY FILTERS
+# APPLY FILTERS — empty list = no filter (show all)
 # ============================================================
 
 def apply_filters(base_df):
     d = base_df.copy()
-    if sel_poll:    d = d[d["Air Pollutant"].isin(sel_poll)]
-    if sel_outcome: d = d[d["Outcome"].isin(sel_outcome)]
-    if sel_age:     d = d[d["Description Of Age Group"].isin(sel_age)]
-    if sel_sex:     d = d[d["Sex"].isin(sel_sex)]
+    if sel_poll:      d = d[d["Air Pollutant"].isin(sel_poll)]
+    if sel_outcome:   d = d[d["Outcome"].isin(sel_outcome)]
+    if sel_age:       d = d[d["Description Of Age Group"].isin(sel_age)]
+    if sel_indicator: d = d[d["Health Indicator"].isin(sel_indicator)]
     return d
 
 filtered_country = apply_filters(df_country)
 filtered_cities  = apply_filters(df_cities)
 
-# Indicator subsets (country-level)
 ad_country  = filtered_country[filtered_country["Health Indicator"] == "Attributable deaths (AD)"]
 yll_country = filtered_country[filtered_country["Health Indicator"] == "Years of Life Lost (YLL)"]
 dal_country = filtered_country[filtered_country["Health Indicator"] == "Disability-Adjusted Life Years (DALY)"]
@@ -152,198 +135,173 @@ yld_country = filtered_country[filtered_country["Health Indicator"] == "Years Li
 ad_cities   = filtered_cities[filtered_cities["Health Indicator"] == "Attributable deaths (AD)"]
 
 # ============================================================
-# SHARED HELPERS
+# HELPERS
 # ============================================================
 
 def fmt(n):
-    """Format large numbers for KPI cards."""
     if pd.isna(n) or n == 0:
         return "N/A"
     n = float(n)
     if n >= 1_000_000: return f"{n/1_000_000:.2f}M"
-    if n >= 1_000:     return f"{n/1_000:.1f}K"
+    elif n >= 1_000:   return f"{n/1_000:.1f}K"
     return str(int(n))
 
-# Shared dark-transparent layout base
-# NOTE: margin is intentionally excluded here — set it per-chart to avoid
-# "multiple values for keyword argument 'margin'" when **DARK is unpacked.
 DARK = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
-    font=dict(color="#e8eaf0", family="sans-serif", size=12),
+    font=dict(color="#e8eaf0", family="sans-serif"),
+    margin=dict(l=10, r=10, t=40, b=10),
 )
-
-# Default margin used by most charts — apply explicitly per update_layout call
-M = dict(l=10, r=10, t=44, b=10)
-
-POLL_COLORS = {"PM2.5": "#4f8ef7", "NO2": "#f7914f", "O3": "#4ff7a8"}
-ACCENT = ["#4f8ef7", "#f7914f", "#7c4ff7", "#4ff7a8", "#f74f6e", "#f7d44f", "#4ff7d4"]
-
-def insight(html):
-    st.markdown(f"<div class='insight-box'>{html}</div>", unsafe_allow_html=True)
-
-def section(label):
-    st.subheader(label)
+ACCENT  = ["#4f8ef7", "#f7914f", "#7c4ff7", "#4fd97c", "#f74f6e", "#f7d44f", "#4fd4f7"]
+BLUES   = px.colors.sequential.Blues_r
 
 # ============================================================
 # PAGE HEADER
 # ============================================================
 
 st.markdown("# 🌍 Air Pollution & Health Impact in Europe")
-st.markdown(
-    "Interactive analysis of health burdens caused by **PM2.5**, **NO2**, and **O3** "
-    "across **37 European countries** and **973 cities** · WHO/EEA 2022 data · WHO 2021 AQG Baseline"
-)
+st.markdown("Exploring the health burden of **PM2.5**, **NO2**, and **O3** across 37 European countries · 2022 · WHO 2021 AQG Baseline")
 st.markdown("---")
 
 # ============================================================
-# TABS
+# TABS — 6 tabs with full insight coverage
 # ============================================================
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "📊  Overview & Pollutants",
-    "🗺️  Geographic Patterns",
-    "🔬  Disease Analysis",
-    "👥  Age & Vulnerability",
-    "🏙️  City Explorer",
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    "📊 Overview",
+    "🗺️ Geographic",
+    "🔬 Disease Breakdown",
+    "👥 Age & Vulnerability",
+    "⚖️ Death vs Disability",
+    "🏙️ City Drilldown",
 ])
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# TAB 1 — OVERVIEW & POLLUTANTS
-# Purpose: Big-picture KPIs + which pollutant kills most + trend
-# Unique charts: KPI row, pollutant share bar, pollutant×disease heatmap
+# TAB 1 — OVERVIEW
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab1:
 
-    # ── KPI CARDS ────────────────────────────────────────────
-    section("Key Health Burden Metrics")
+    st.markdown("### 📊 Health Burden Summary")
     k1, k2, k3, k4 = st.columns(4)
     k1.metric("💀 Attributable Deaths",      fmt(ad_country["Value"].sum()))
-    k2.metric("⏳ Years of Life Lost",        fmt(yll_country["Value"].sum()))
-    k3.metric("⚕️ DALYs (Total Burden)",      fmt(dal_country["Value"].sum()))
-    k4.metric("♿ Years Lived with Disability", fmt(yld_country["Value"].sum()))
-
-    st.markdown("")
-
-    # ── WHO GUIDELINE COMPARISON ──────────────────────────────
-    section("Pollutant Exposure vs WHO 2021 Safe Limits")
-    st.caption(
-        "Population-weighted averages across European urban areas. "
-        "**WHO limits:** PM2.5 = 5 µg/m³ · NO2 = 10 µg/m³ · O3 = 60 µg/m³"
-    )
-
-    pm25_val = df_country[(df_country["Air Pollutant"] == "PM2.5") & (df_country[PW_COL] < 500)][PW_COL].mean()
-    no2_val  = df_country[(df_country["Air Pollutant"] == "NO2")   & (df_country[PW_COL] < 500)][PW_COL].mean()
-    o3_val   = df_country[(df_country["Air Pollutant"] == "O3")    & (df_country[PW_COL] < 500)][PW_COL].mean()
-
-    who_limits = {"PM2.5": 5, "NO2": 10, "O3": 60}
-    who_actual = {
-        "PM2.5": round(pm25_val, 1) if pd.notna(pm25_val) else 0,
-        "NO2":   round(no2_val,  1) if pd.notna(no2_val)  else 0,
-        "O3":    round(o3_val,   1) if pd.notna(o3_val)   else 0,
-    }
-
-    bars_who = []
-    for poll, actual in who_actual.items():
-        limit = who_limits[poll]
-        bars_who.append({"Pollutant": poll, "Type": "Actual Exposure", "Value": actual})
-        bars_who.append({"Pollutant": poll, "Type": "WHO Safe Limit",  "Value": limit})
-
-    df_who = pd.DataFrame(bars_who)
-    fig_who = px.bar(
-        df_who, x="Pollutant", y="Value", color="Type", barmode="group",
-        color_discrete_map={"Actual Exposure": "#f7914f", "WHO Safe Limit": "#4ff7a8"},
-        labels={"Value": "µg/m³"},
-        template="plotly_dark",
-        text="Value",
-    )
-    fig_who.update_traces(texttemplate="%{text}", textposition="outside")
-    fig_who.update_layout(
-        **DARK, height=320, margin=M,
-        legend=dict(orientation="h", y=1.1, bgcolor="rgba(0,0,0,0)", font=dict(size=11, color="#7a7d8f")),
-        xaxis=dict(gridcolor="rgba(0,0,0,0)"),
-        yaxis=dict(gridcolor="#2a2d3e", title="µg/m³"),
-    )
-    st.plotly_chart(fig_who, use_container_width=True)
-
-    insight(
-        "<strong>All three pollutants exceed WHO limits.</strong> "
-        "Europe's average PM2.5 is <span class='hl'>~2.7× above</span> the safe limit of 5 µg/m³. "
-        "NO2 is <span class='hl'>~1.8× above</span> its 10 µg/m³ limit. "
-        "O3 at ~88 µg/m³ is <span class='hl'>47% above</span> the 60 µg/m³ guideline — often overlooked but harmful to lung function."
-    )
+    k2.metric("⏳ Years of Life Lost (YLL)",  fmt(yll_country["Value"].sum()))
+    k3.metric("⚕️ DALYs",                    fmt(dal_country["Value"].sum()))
+    k4.metric("♿ Years Lived w/ Disability", fmt(yld_country["Value"].sum()))
 
     st.markdown("---")
 
-    # ── POLLUTANT SHARE OF DEATHS ─────────────────────────────
-    col_a, col_b = st.columns(2)
-
-    with col_a:
-        section("Share of Deaths by Pollutant")
-        st.caption("Share of total attributable deaths by pollutant type.")
-        poll_deaths = ad_country.groupby("Air Pollutant")["Value"].sum().reset_index()
-        poll_deaths.columns = ["Pollutant", "Deaths"]
-        total_d = poll_deaths["Deaths"].sum()
-        poll_deaths["Share (%)"] = (poll_deaths["Deaths"] / total_d * 100).round(1)
-
-        fig_poll_pie = px.pie(
-            poll_deaths, values="Deaths", names="Pollutant",
-            hole=0.52,
-            color="Pollutant",
-            color_discrete_map=POLL_COLORS,
-            template="plotly_dark",
-        )
-        fig_poll_pie.update_traces(
-            textinfo="percent+label",
-            textfont=dict(size=12, color="white"),
-            insidetextorientation="radial",
-        )
-        fig_poll_pie.update_layout(
-            **DARK, height=320, showlegend=False,
-            margin=dict(l=10, r=10, t=10, b=10),
-        )
-        st.plotly_chart(fig_poll_pie, use_container_width=True)
-
-    with col_b:
-        section("Attributable Deaths — Mortality vs Morbidity by Pollutant")
-        st.caption("Breaks down each pollutant's deaths by whether the cause is classified as Mortality or Morbidity.")
-        poll_cat = ad_country.groupby(["Air Pollutant", "Category"])["Value"].sum().reset_index()
-        fig_poll_cat = px.bar(
-            poll_cat, x="Air Pollutant", y="Value", color="Category",
-            barmode="group",
-            color_discrete_sequence=ACCENT,
-            labels={"Value": "Attributable Deaths", "Air Pollutant": "Pollutant"},
-            template="plotly_dark",
-        )
-        fig_poll_cat.update_layout(
-            **DARK, height=320, margin=M,
-            legend=dict(orientation="h", y=1.12, bgcolor="rgba(0,0,0,0)", font=dict(size=11, color="#7a7d8f")),
-            xaxis=dict(gridcolor="rgba(0,0,0,0)"),
-            yaxis=dict(gridcolor="#2a2d3e"),
-        )
-        st.plotly_chart(fig_poll_cat, use_container_width=True)
-
-    insight(
-        "<strong>PM2.5 dominates.</strong> Fine particulate matter accounts for "
-        "<span class='hl'>~83% of all pollution-attributable deaths</span> in Europe. "
-        "It penetrates the lungs and bloodstream, causing heart disease, stroke, dementia, and lung cancer. "
-        "NO2 contributes ~17%, mainly through stroke and diabetes. O3 accounts for only ~2%."
+    # FIX 4: Replaced red delta arrows with plain explanatory caption
+    st.markdown("### 🌫️ Population-Weighted Pollutant Averages (µg/m³)")
+    st.caption(
+        "Uses population-weighted average — accounts for actual exposure levels. Excludes supra-national aggregates. "
+        "**WHO 2021 guideline limits:** PM2.5 = 5 µg/m³ · NO2 = 10 µg/m³ · O3 = 60 µg/m³. "
+        "All values shown **exceed** WHO recommended limits."
     )
+    pm25 = df_country[(df_country["Air Pollutant"] == "PM2.5") & (df_country[PW_COL] < 500)][PW_COL].mean()
+    no2  = df_country[(df_country["Air Pollutant"] == "NO2")   & (df_country[PW_COL] < 500)][PW_COL].mean()
+    o3   = df_country[(df_country["Air Pollutant"] == "O3")    & (df_country[PW_COL] < 500)][PW_COL].mean()
+
+    p1, p2, p3 = st.columns(3)
+    p1.metric("PM2.5 (µg/m³)", f"{pm25:.1f}" if pd.notna(pm25) else "N/A")
+    p2.metric("NO2 (µg/m³)",   f"{no2:.1f}"  if pd.notna(no2)  else "N/A")
+    p3.metric("O3 (µg/m³)",    f"{o3:.1f}"   if pd.notna(o3)   else "N/A")
+
+    st.markdown("""
+    <div class='insight-box'>
+    <strong>💡 What this means:</strong>
+    Europe's average PM2.5 is <span class='highlight'>~2.7× above</span> the WHO limit of 5 µg/m³.
+    NO2 is <span class='highlight'>~1.8× above</span> the 10 µg/m³ limit.
+    O3 at ~88 µg/m³ is <span class='highlight'>47% above</span> the 60 µg/m³ guideline — a widely overlooked pollutant that primarily harms lung function.
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # INSIGHT: Which pollutant kills the most
+    st.markdown("### ☠️ Which Pollutant Causes the Most Deaths?")
+    poll_deaths = ad_country.groupby("Air Pollutant")["Value"].sum().reset_index()
+    poll_deaths.columns = ["Pollutant", "Deaths"]
+    total_d = poll_deaths["Deaths"].sum()
+    poll_deaths["Share (%)"] = (poll_deaths["Deaths"] / total_d * 100).round(1)
+
+    fig_poll_share = px.bar(
+        poll_deaths.sort_values("Deaths", ascending=True),
+        x="Deaths", y="Pollutant", orientation="h",
+        color="Pollutant",
+        color_discrete_map={"PM2.5": "#4f8ef7", "NO2": "#f7914f", "O3": "#4ff7a8"},
+        text="Share (%)",
+        labels={"Deaths": "Attributable Deaths", "Pollutant": ""},
+        template="plotly_dark",
+    )
+    fig_poll_share.update_traces(texttemplate="%{text}%", textposition="outside")
+    fig_poll_share.update_layout(**DARK, height=260, showlegend=False,
+                                  xaxis=dict(gridcolor="#2a2d3e"),
+                                  yaxis=dict(gridcolor="rgba(0,0,0,0)"))
+    st.plotly_chart(fig_poll_share, use_container_width=True)
+
+    st.markdown("""
+    <div class='insight-box'>
+    <strong>💡 Key Finding:</strong>
+    <span class='highlight'>PM2.5 is responsible for ~83% of all pollution-attributable deaths</span> in Europe.
+    Fine particulate matter penetrates deep into the lungs and bloodstream, causing heart disease, stroke, dementia and lung cancer.
+    NO2 contributes 17%, primarily through stroke and diabetes. O3 accounts for only ~2%.
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # FIX 5: Scatter — no text labels, rich hover tooltip
+    st.markdown("### 🔵 Pollution Level vs Attributable Deaths — by Country")
+    st.caption("Hover over a bubble to see country name, pollution level, and total deaths. Bubble size = total deaths.")
+
+    scatter_agg = (
+        ad_country.groupby("Country Or Territory")
+        .agg(Deaths=("Value", "sum"), Pollution=(PW_COL, "mean"))
+        .reset_index()
+    )
+    scatter_agg = scatter_agg[scatter_agg["Pollution"] < 500]
+
+    fig_scatter = px.scatter(
+        scatter_agg,
+        x="Pollution", y="Deaths",
+        hover_name="Country Or Territory",
+        hover_data={"Pollution": ":.1f", "Deaths": ":,", "Country Or Territory": False},
+        size="Deaths", size_max=50,
+        color="Deaths",
+        color_continuous_scale="Blues",
+        labels={
+            "Pollution": "Population-weighted pollution avg (µg/m³)",
+            "Deaths":    "Total attributable deaths",
+        },
+        template="plotly_dark",
+    )
+    fig_scatter.update_layout(
+        **DARK, height=450,
+        coloraxis_showscale=False,
+        xaxis=dict(gridcolor="#2a2d3e"),
+        yaxis=dict(gridcolor="#2a2d3e"),
+    )
+    st.plotly_chart(fig_scatter, use_container_width=True)
+
+    st.markdown("""
+    <div class='insight-box'>
+    <strong>💡 Key Finding — Population size distorts raw totals:</strong>
+    Italy and Germany have the highest total death counts due to large populations, not necessarily the worst pollution.
+    <span class='highlight'>Smaller Balkan countries (Bosnia, Serbia) have higher pollution but fewer total deaths.</span>
+    The per-100k rate (Geographic tab) is a much fairer comparison between countries.
+    </div>
+    """, unsafe_allow_html=True)
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# TAB 2 — GEOGRAPHIC PATTERNS
-# Purpose: Where is pollution worst? Where do people die most?
-# Unique charts: Two choropleth maps (side-by-side), Top cities bar
+# TAB 2 — GEOGRAPHIC
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab2:
 
-    section("Deaths per 100k Population vs PM2.5 Pollution — Country Comparison")
+    col_map1, col_map2 = st.columns(2)
 
-    col_m1, col_m2 = st.columns(2)
-
-    with col_m1:
-        st.caption("🗺️ Deaths per 100,000 people — darker red = higher burden")
+    with col_map1:
+        st.markdown("### 🗺️ Deaths per 100k by Country")
         map_agg = (
             ad_country.groupby("Country Or Territory")["Value for 100k Of Affected Population"]
             .sum().reset_index()
@@ -355,7 +313,7 @@ with tab2:
             labels={"Per100k": "Deaths per 100k"}, template="plotly_dark",
         )
         fig_map.update_layout(
-            **DARK, height=430, margin=M,
+            **DARK, height=420,
             geo=dict(bgcolor="rgba(0,0,0,0)", lakecolor="rgba(0,0,0,0)",
                      landcolor="#1e2130", showframe=False),
             coloraxis_colorbar=dict(
@@ -366,19 +324,19 @@ with tab2:
         )
         st.plotly_chart(fig_map, use_container_width=True)
 
-    with col_m2:
-        st.caption("🗺️ PM2.5 concentration — darker = more polluted air")
+    with col_map2:
+        st.markdown("### 🗺️ PM2.5 Pollution Level by Country")
         pm25_map = df_country[
             (df_country["Air Pollutant"] == "PM2.5") & (df_country[PW_COL] < 500)
         ].groupby("Country Or Territory")[PW_COL].mean().reset_index()
         pm25_map.columns = ["Country", "PM25"]
-        fig_pm = px.choropleth(
+        fig_pm25_map = px.choropleth(
             pm25_map, locations="Country", locationmode="country names",
             color="PM25", color_continuous_scale="YlOrRd", scope="europe",
             labels={"PM25": "PM2.5 µg/m³"}, template="plotly_dark",
         )
-        fig_pm.update_layout(
-            **DARK, height=430, margin=M,
+        fig_pm25_map.update_layout(
+            **DARK, height=420,
             geo=dict(bgcolor="rgba(0,0,0,0)", lakecolor="rgba(0,0,0,0)",
                      landcolor="#1e2130", showframe=False),
             coloraxis_colorbar=dict(
@@ -387,126 +345,270 @@ with tab2:
                 title=dict(text="PM2.5\nµg/m³", font=dict(color="#7a7d8f", size=10)),
             ),
         )
-        st.plotly_chart(fig_pm, use_container_width=True)
+        st.plotly_chart(fig_pm25_map, use_container_width=True)
 
-    insight(
-        "<strong>The East-West divide is stark.</strong> "
-        "Eastern and Balkan countries have far higher death rates per 100,000 people. "
-        "<span class='hl'>Bosnia & Herzegovina, North Macedonia, Kosovo, and Serbia</span> top the mortality table — "
-        "driven by coal heating, older vehicle fleets, and weaker environmental regulation. "
-        "Compare both maps: the most polluted countries closely mirror the highest mortality rates."
-    )
+    st.markdown("""
+    <div class='insight-box'>
+    <strong>💡 Key Finding — The East-West Divide:</strong>
+    <span class='highlight'>Eastern and Balkan countries suffer far more deaths per 100,000 people</span> despite smaller populations.
+    Bosnia & Herzegovina, North Macedonia and Serbia top the per-100k table — driven by heavy reliance on coal heating,
+    older vehicle fleets, and weaker environmental regulations. Compare both maps: the most polluted countries (right) closely
+    mirror the highest mortality rates (left).
+    </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("---")
 
-    # ── TOP 20 CITIES ─────────────────────────────────────────
-    section("Top 20 Most Burdened Cities — Deaths per 100,000 Residents")
-    st.caption("Per-100k rate adjusts for city population size — a fairer comparison than raw death totals.")
-
-    city_agg = (
-        ad_cities.groupby(["City Or Territory", "Country Or Territory"])
-        ["Value for 100k Of Affected Population"].sum().reset_index()
+    st.markdown("### 🏆 Top 15 Countries — Deaths per 100k")
+    st.caption("Per-100k is a fairer comparison than total deaths as it adjusts for population size.")
+    top_countries = (
+        ad_country.groupby("Country Or Territory")["Value for 100k Of Affected Population"]
+        .sum().reset_index()
+        .nlargest(15, "Value for 100k Of Affected Population")
+        .sort_values("Value for 100k Of Affected Population")
     )
-    city_agg.columns = ["City", "Country", "Per100k"]
-    city_agg = city_agg.nlargest(20, "Per100k").sort_values("Per100k")
-    city_agg["Label"] = city_agg["City"] + "  (" + city_agg["Country"] + ")"
-
-    fig_cities = px.bar(
-        city_agg, x="Per100k", y="Label", orientation="h",
-        color="Per100k", color_continuous_scale="Blues",
-        labels={"Per100k": "Deaths per 100k", "Label": ""},
+    top_countries.columns = ["Country", "Per100k"]
+    fig_top_c = px.bar(
+        top_countries, x="Per100k", y="Country", orientation="h",
+        color="Per100k", color_continuous_scale="Reds",
+        labels={"Per100k": "Deaths per 100k population", "Country": ""},
         template="plotly_dark",
     )
-    fig_cities.update_layout(
-        **DARK, height=560, margin=M, coloraxis_showscale=False,
-        xaxis=dict(gridcolor="#2a2d3e"),
-        yaxis=dict(gridcolor="rgba(0,0,0,0)"),
-    )
-    st.plotly_chart(fig_cities, use_container_width=True)
-
-    insight(
-        "<strong>Italy's Po Valley dominates the city rankings.</strong> "
-        "<span class='hl'>14 of the top 20 most burdened cities are Italian</span> — concentrated in the "
-        "Po Valley (Milan, Brescia, Bergamo, Cremona). This flat basin surrounded by mountains traps "
-        "pollution year-round. Geography matters as much as emissions."
-    )
+    fig_top_c.update_layout(**DARK, height=480, coloraxis_showscale=False,
+                             xaxis=dict(gridcolor="#2a2d3e"),
+                             yaxis=dict(gridcolor="rgba(0,0,0,0)"))
+    st.plotly_chart(fig_top_c, use_container_width=True)
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# TAB 3 — DISEASE ANALYSIS
-# Purpose: Which diseases are caused by which pollutant?
-# Unique charts: Pollutant×Disease heatmap, DALY bar,
-#                YLL vs YLD stacked 100% bar (death vs disability split)
+# TAB 3 — DISEASE BREAKDOWN
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab3:
 
-    # ── POLLUTANT × DISEASE HEATMAP ───────────────────────────
-    section("Pollutant × Disease Heatmap — Which Pollutant Causes Which Disease?")
-    st.caption(
-        "Each cell shows the number of deaths attributable to that pollutant–disease combination. "
-        "Darker = more deaths."
-    )
+    st.markdown("### 🧬 Pollutant × Disease Heatmap — Which Pollutant Causes Which Disease?")
+    st.caption("Each cell shows attributable deaths for that disease × pollutant combination.")
 
-    hm_data = ad_country.groupby(["Outcome", "Air Pollutant"])["Value"].sum().reset_index()
-    hm_data.columns = ["Disease", "Pollutant", "Deaths"]
+    hm_long = (
+        ad_country.groupby(["Outcome", "Air Pollutant"])["Value"]
+        .sum().reset_index()
+    )
+    hm_long.columns = ["Disease", "Pollutant", "Deaths"]
 
     fig_hm = px.density_heatmap(
-        hm_data, x="Pollutant", y="Disease", z="Deaths",
+        hm_long, x="Pollutant", y="Disease", z="Deaths",
         color_continuous_scale="Blues",
         labels={"Deaths": "Attributable Deaths"},
         template="plotly_dark",
         text_auto=True,
     )
-    fig_hm.update_layout(
-        **DARK, height=380, margin=M,
-        xaxis=dict(gridcolor="rgba(0,0,0,0)"),
-        yaxis=dict(gridcolor="rgba(0,0,0,0)"),
-        coloraxis_showscale=False,
-    )
+    fig_hm.update_layout(**DARK, height=380,
+                          xaxis=dict(gridcolor="rgba(0,0,0,0)"),
+                          yaxis=dict(gridcolor="rgba(0,0,0,0)"),
+                          coloraxis_showscale=False)
     st.plotly_chart(fig_hm, use_container_width=True)
 
-    insight(
-        "<strong>Each pollutant has a distinct disease fingerprint.</strong> "
-        "<span class='hl'>PM2.5 is the only pollutant linked to Dementia, Lung Cancer, and Ischemic Heart Disease</span> — "
-        "it reaches the bloodstream. NO2 primarily drives Stroke and Diabetes. "
-        "O3 affects only COPD — it is a lung-specific pollutant. "
-        "Reducing PM2.5 would have the broadest cross-disease benefit."
-    )
+    st.markdown("""
+    <div class='insight-box'>
+    <strong>💡 Key Finding — Each pollutant has a distinct disease fingerprint:</strong>
+    <span class='highlight'>PM2.5 is the only pollutant linked to Dementia, Lung Cancer, and Ischemic Heart Disease</span> — it reaches the bloodstream.
+    NO2 primarily drives Stroke and Diabetes. O3 affects only COPD — it is a lung-specific pollutant.
+    This means reducing PM2.5 would have the broadest cross-disease benefit.
+    </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("---")
 
-    # ── DALY BY DISEASE ───────────────────────────────────────
-    section("Total Disease Burden — DALY by Disease (Deaths + Disability)")
-    st.caption(
-        "DALY = Deaths + Years of Disability combined. "
-        "The most complete single measure of a disease's overall burden on society."
-    )
-    daly_d = dal_country.groupby("Outcome")["Value"].sum().reset_index()
-    daly_d.columns = ["Disease", "DALY"]
-    daly_d = daly_d.sort_values("DALY")
-
-    fig_daly = px.bar(
-        daly_d, x="DALY", y="Disease", orientation="h",
-        color="DALY", color_continuous_scale="Purples",
-        labels={"DALY": "Disability-Adjusted Life Years", "Disease": ""},
+    # FIX 6: Removed donut emoji from heading
+    st.markdown("### Disease Outcome Split — Share of Deaths")
+    outcome_agg = ad_country.groupby("Outcome")["Value"].sum().reset_index()
+    fig_donut = px.pie(
+        outcome_agg, values="Value", names="Outcome",
+        hole=0.55,
+        color_discrete_sequence=BLUES,
         template="plotly_dark",
     )
-    fig_daly.update_layout(
-        **DARK, height=420, margin=dict(l=10, r=10, t=30, b=10),
-        coloraxis_showscale=False,
-        xaxis=dict(gridcolor="#2a2d3e"),
-        yaxis=dict(gridcolor="rgba(0,0,0,0)"),
+    fig_donut.update_traces(
+        textposition="inside", textinfo="percent",
+        insidetextorientation="radial",
+        textfont=dict(color="white", size=11),
     )
-    st.plotly_chart(fig_daly, use_container_width=True)
+    fig_donut.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#e8eaf0", family="sans-serif"),
+        height=420, showlegend=True,
+        legend=dict(orientation="v", font=dict(size=12, color="#7a7d8f"),
+                    x=0.85, y=0.5, bgcolor="rgba(0,0,0,0)"),
+        margin=dict(l=10, r=200, t=40, b=10),
+    )
+    st.plotly_chart(fig_donut, use_container_width=True)
+
+    st.markdown("""
+    <div class='insight-box'>
+    <strong>💡 Key Finding — Stroke & Ischemic Heart Disease dominate deaths:</strong>
+    <span class='highlight'>Stroke and Ischemic Heart Disease together account for the majority of pollution-attributable deaths</span> in Europe.
+    PM2.5 is the primary driver — it reaches the bloodstream and triggers cardiovascular disease at scale.
+    </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("---")
 
-    # ── YLL vs YLD STACKED ────────────────────────────────────
-    section("Premature Death (YLL) vs Long-Term Disability (YLD) — by Disease")
+    # Mortality vs Morbidity by Disease
+    st.markdown("### 📊 Burden by Disease — Mortality vs Morbidity")
+    st.caption("Mortality = attributable deaths (AD). Morbidity = years lived with disability (YLD). Shows which diseases kill vs which disable.")
+
+    mort_by_disease = (
+        df_country[df_country["Health Indicator"] == "Attributable deaths (AD)"]
+        .groupby("Outcome")["Value"].sum().reset_index()
+    )
+    mort_by_disease.columns = ["Disease", "Value"]
+    mort_by_disease["Category"] = "Mortality"
+
+    morb_by_disease = (
+        df_country[df_country["Health Indicator"] == "Years Lived with Disability (YLD)"]
+        .groupby("Outcome")["Value"].sum().reset_index()
+    )
+    morb_by_disease.columns = ["Disease", "Value"]
+    morb_by_disease["Category"] = "Morbidity"
+
+    burden_disease = pd.concat([mort_by_disease, morb_by_disease], ignore_index=True)
+
+    fig_burden_disease = px.bar(
+        burden_disease,
+        x="Disease", y="Value", color="Category",
+        barmode="group",
+        color_discrete_map={"Mortality": "#4f8ef7", "Morbidity": "#f7914f"},
+        labels={"Value": "Count", "Disease": "Disease", "Category": "Category"},
+        template="plotly_dark",
+    )
+    fig_burden_disease.update_layout(
+        **DARK, height=420,
+        xaxis=dict(gridcolor="rgba(0,0,0,0)", tickangle=-30),
+        yaxis=dict(gridcolor="#2a2d3e", title="Count"),
+        legend=dict(orientation="h", y=1.08, font=dict(size=11, color="#7a7d8f"),
+                    bgcolor="rgba(0,0,0,0)"),
+    )
+    st.plotly_chart(fig_burden_disease, use_container_width=True)
+
+    st.markdown("""
+    <div class='insight-box'>
+    <strong>💡 Key Finding — Diseases affect populations in completely different ways:</strong>
+    <span class='highlight'>Ischemic Heart Disease and Stroke dominate mortality</span> — these diseases kill at scale.
+    In contrast, <span class='highlight'>Childhood Asthma and Dementia dominate morbidity</span> — they disable rather than kill directly.
+    This split is essential for policy: reducing PM2.5 targets both killers and disablers simultaneously.
+    </div>
+    """, unsafe_allow_html=True)
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# TAB 4 — AGE & VULNERABILITY
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+with tab4:
+
+    # True age order present in df_country (>= 30 has no country-level records)
+    _AGE_ORDER_RISK = ["< 19 years of age", ">= 19 years of age",
+                       ">= 25 years of age", ">= 60 years of age"]
+
+    # Distinct colour per age group — used consistently in both charts
+    _AGE_COLOURS = {
+        "< 19 years of age":  "#4f8ef7",   # blue
+        ">= 19 years of age": "#4fd97c",   # green
+        ">= 25 years of age": "#f7914f",   # orange
+        ">= 60 years of age": "#f74f6e",   # red/pink
+    }
+
+    st.markdown("### 👥 Who Is Most at Risk? — DALY per 100k by Age Group")
+    st.caption("DALY (Disability-Adjusted Life Years) captures both deaths and disability — "
+               "giving a complete picture across all age groups including children.")
+    age_agg = (
+        df_country[df_country["Health Indicator"] == "Disability-Adjusted Life Years (DALY)"]
+        .groupby("Description Of Age Group")["Value for 100k Of Affected Population"]
+        .sum().reset_index()
+    )
+    age_agg.columns = ["Age Group", "Per100k"]
+    age_agg["_order"] = age_agg["Age Group"].apply(
+        lambda x: _AGE_ORDER_RISK.index(x) if x in _AGE_ORDER_RISK else 99
+    )
+    age_agg = age_agg.sort_values("_order").drop(columns="_order")
+    age_agg["Colour"] = age_agg["Age Group"].map(_AGE_COLOURS)
+
+    fig_age = go.Figure()
+    for _, row in age_agg.iterrows():
+        fig_age.add_trace(go.Bar(
+            x=[row["Per100k"]],
+            y=[row["Age Group"]],
+            orientation="h",
+            marker_color=_AGE_COLOURS.get(row["Age Group"], "#aaaaaa"),
+            text=[f"{row['Per100k']:,.0f}"],
+            textposition="outside",
+            name=row["Age Group"],
+            showlegend=False,
+        ))
+    fig_age.update_layout(
+        **DARK, height=340, barmode="overlay",
+        xaxis=dict(gridcolor="#2a2d3e", title="DALY per 100k"),
+        yaxis=dict(gridcolor="rgba(0,0,0,0)",
+                   categoryorder="array",
+                   categoryarray=list(reversed(_AGE_ORDER_RISK))),
+    )
+    st.plotly_chart(fig_age, use_container_width=True)
+
+    st.markdown("""
+    <div class='insight-box'>
+    <strong>💡 Key Finding — The ≥25 group carries the greatest total burden:</strong>
+    The <span class='highlight'>≥25 age group dominates DALY per 100k</span> driven by stroke,
+    ischemic heart disease and diabetes. The ≥60 group follows with dementia and heart disease.
+    Children and young adults (&lt;19, ≥19) show real but lower burden — primarily from asthma disability
+    rather than deaths, which is why DALY is the right metric here.
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # Age × Disease heatmap — DALY so all groups have non-zero values
+    st.markdown("### 🔥 Age Group × Disease — Which Age Group Gets Which Disease?")
+    st.caption("Using DALY (deaths + disability) so all age groups, including children, show their true burden.")
+    age_disease = (
+        df_country[df_country["Health Indicator"] == "Disability-Adjusted Life Years (DALY)"]
+        .groupby(["Description Of Age Group", "Outcome"])["Value"]
+        .sum().reset_index()
+    )
+    age_disease.columns = ["Age Group", "Disease", "DALY"]
+    present_ages = [a for a in _AGE_ORDER_RISK if a in age_disease["Age Group"].unique()]
+
+    fig_age_hm = px.density_heatmap(
+        age_disease, x="Age Group", y="Disease", z="DALY",
+        color_continuous_scale="YlOrRd",
+        template="plotly_dark",
+        text_auto=True,
+        category_orders={"Age Group": present_ages},
+    )
+    fig_age_hm.update_layout(**DARK, height=420,
+                              coloraxis_showscale=False,
+                              xaxis=dict(gridcolor="rgba(0,0,0,0)", tickangle=-20,
+                                         categoryorder="array", categoryarray=present_ages),
+                              yaxis=dict(gridcolor="rgba(0,0,0,0)"))
+    st.plotly_chart(fig_age_hm, use_container_width=True)
+
+    st.markdown("""
+    <div class='insight-box'>
+    <strong>💡 Key Finding:</strong>
+    <span class='highlight'>Dementia burden is concentrated in the ≥60 age group</span> — the defining disease of elderly air pollution exposure.
+    Stroke, Ischemic Heart Disease and Diabetes peak in the ≥25 group.
+    Children (&lt;19) and young adults (≥19) show asthma as their primary burden — disability without significant mortality.
+    </div>
+    """, unsafe_allow_html=True)
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# TAB 5 — DEATH vs DISABILITY (YLL vs YLD)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+with tab5:
+
+    st.markdown("### ⚖️ Premature Death vs Long-Term Disability — by Disease")
     st.caption(
-        "Blue = share of burden that is premature death (YLL). "
-        "Orange = share that is years of chronic disability (YLD). "
-        "Each bar totals 100%."
+        "YLL = Years of Life Lost (premature death). "
+        "YLD = Years Lived with Disability (chronic illness). "
+        "A high YLL% = disease mostly kills quickly. A high YLD% = disease causes prolonged suffering."
     )
 
     yll_d = yll_country.groupby("Outcome")["Value"].sum()
@@ -519,239 +621,57 @@ with tab3:
     tradeoff["YLD_%"] = (tradeoff["YLD"] / tradeoff["Total"] * 100).round(1)
     tradeoff = tradeoff.sort_values("YLL_%", ascending=True)
 
-    fig_stack = go.Figure()
-    fig_stack.add_trace(go.Bar(
+    fig_stacked = go.Figure()
+    fig_stacked.add_trace(go.Bar(
         y=tradeoff["Disease"], x=tradeoff["YLD_%"],
-        name="% Disability (YLD)", orientation="h",
+        name="% Disability (YLD)",
+        orientation="h",
         marker_color="#f7914f",
         text=tradeoff["YLD_%"].astype(str) + "%",
         textposition="inside",
     ))
-    fig_stack.add_trace(go.Bar(
+    fig_stacked.add_trace(go.Bar(
         y=tradeoff["Disease"], x=tradeoff["YLL_%"],
-        name="% Premature Death (YLL)", orientation="h",
+        name="% Premature Death (YLL)",
+        orientation="h",
         marker_color="#4f8ef7",
         text=tradeoff["YLL_%"].astype(str) + "%",
         textposition="inside",
     ))
-    fig_stack.update_layout(
-        **DARK, height=420, margin=dict(l=10, r=10, t=30, b=10),
-        barmode="stack",
-        xaxis=dict(title="% of Total Burden", gridcolor="#2a2d3e", range=[0, 100]),
+    fig_stacked.update_layout(
+        **DARK, height=380, barmode="stack",
+        xaxis=dict(title="Percentage of Total Burden", gridcolor="#2a2d3e", range=[0, 100]),
         yaxis=dict(gridcolor="rgba(0,0,0,0)"),
-        legend=dict(orientation="h", y=1.08, bgcolor="rgba(0,0,0,0)", font=dict(size=11, color="#7a7d8f")),
+        legend=dict(orientation="h", y=1.08, font=dict(size=11, color="#7a7d8f"),
+                    bgcolor="rgba(0,0,0,0)"),
     )
-    st.plotly_chart(fig_stack, use_container_width=True)
+    st.plotly_chart(fig_stacked, use_container_width=True)
 
-    insight(
-        "<strong>Two completely different disease stories.</strong> "
-        "<span class='hl'>Lung Cancer (99%) and Ischemic Heart Disease (97%)</span> are almost entirely "
-        "about premature death — once diagnosed, they kill quickly. "
-        "<span class='hl'>Childhood Asthma (99% YLD) and Dementia (56% YLD)</span> are about prolonged "
-        "suffering — years of chronic disability. "
-        "This distinction is critical for policy: reducing PM2.5 saves lives from heart disease "
-        "AND prevents years of dementia and asthma disability."
-    )
+    st.markdown("""
+    <div class='insight-box'>
+    <strong>💡 Key Finding — Two completely different stories:</strong><br>
+    • <span class='highlight'>Lung Cancer (99%) and Ischemic Heart Disease (97%)</span> are almost entirely about premature death — once diagnosed, they kill quickly.<br>
+    • <span class='highlight'>Childhood Asthma (99% YLD) and Dementia (56% YLD)</span> are about prolonged suffering — years of chronic disability.<br>
+    Stroke, Diabetes and COPD sit in the middle — both killing and disabling.
+    This distinction is critical for policy: reducing PM2.5 saves lives from heart disease AND prevents years of dementia and asthma disability.
+    </div>
+    """, unsafe_allow_html=True)
+
+
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# TAB 4 — AGE & VULNERABILITY
-# Purpose: Who is harmed most, and how?
-# Unique charts: Age group deaths bar, age×disease heatmap,
-#                children's asthma by pollutant bar
+# TAB 6 — CITY DRILLDOWN
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-with tab4:
+with tab6:
 
-    # ── AGE GROUP DEATHS ──────────────────────────────────────
-    section("Deaths per 100,000 by Age Group — Who Is Most at Risk?")
-    st.caption("Per-100k rate within each age group. Reveals which age group is disproportionately affected.")
-
-    age_agg = (
-        ad_country.groupby("Description Of Age Group")["Value for 100k Of Affected Population"]
-        .sum().reset_index()
-    )
-    age_agg.columns = ["Age Group", "Per100k"]
-    age_agg = age_agg.sort_values("Per100k")
-
-    fig_age = px.bar(
-        age_agg, x="Per100k", y="Age Group", orientation="h",
-        color="Per100k", color_continuous_scale="Oranges",
-        labels={"Per100k": "Deaths per 100k", "Age Group": ""},
-        text="Per100k",
-        template="plotly_dark",
-    )
-    fig_age.update_traces(texttemplate="%{text:,.0f}", textposition="outside")
-    fig_age.update_layout(
-        **DARK, height=300, margin=M, coloraxis_showscale=False,
-        xaxis=dict(gridcolor="#2a2d3e"),
-        yaxis=dict(gridcolor="rgba(0,0,0,0)"),
-    )
-    st.plotly_chart(fig_age, use_container_width=True)
-
-    insight(
-        "<strong>The elderly bear by far the greatest mortality burden.</strong> "
-        "The <span class='hl'>≥60 age group has a disproportionately high death rate per 100k</span>, "
-        "driven by PM2.5-linked Dementia, Ischemic Heart Disease, and Stroke. "
-        "Children under 19 show near-zero pollution-attributable mortality — but suffer "
-        "significantly in terms of asthma disability (see below)."
-    )
-
-    st.markdown("---")
-
-    # ── AGE × DISEASE HEATMAP ─────────────────────────────────
-    section("Age Group × Disease Heatmap — Which Diseases Affect Which Ages?")
-    st.caption("Number of attributable deaths per age group × disease combination. Darker = more deaths.")
-
-    age_dis = (
-        ad_country.groupby(["Description Of Age Group", "Outcome"])["Value"]
-        .sum().reset_index()
-    )
-    age_dis.columns = ["Age Group", "Disease", "Deaths"]
-
-    fig_agehm = px.density_heatmap(
-        age_dis, x="Age Group", y="Disease", z="Deaths",
-        color_continuous_scale="YlOrRd",
-        template="plotly_dark",
-        text_auto=True,
-    )
-    fig_agehm.update_layout(
-        **DARK, height=420, margin=dict(l=10, r=10, t=30, b=10),
-        coloraxis_showscale=False,
-        xaxis=dict(gridcolor="rgba(0,0,0,0)", tickangle=-15),
-        yaxis=dict(gridcolor="rgba(0,0,0,0)"),
-    )
-    st.plotly_chart(fig_agehm, use_container_width=True)
-
-    st.markdown("---")
-
-    # ── CHILDREN'S ASTHMA DISABILITY ─────────────────────────
-    section("Children's Asthma Disability (Under 19s) — Years Lived with Disability by Pollutant")
-    st.caption(
-        "Years Lived with Disability (YLD) measures chronic illness burden, not deaths. "
-        "Children have near-zero pollution-attributable deaths but carry substantial asthma suffering."
-    )
-
-    child_yld = df_cities[
-        (df_cities["Health Indicator"] == "Years Lived with Disability (YLD)") &
-        (df_cities["Description Of Age Group"] == "< 19 years of age")
-    ]
-    child_poll = child_yld.groupby("Air Pollutant")["Value"].sum().reset_index()
-    child_poll.columns = ["Pollutant", "YLD"]
-    child_poll["Share"] = (child_poll["YLD"] / child_poll["YLD"].sum() * 100).round(1)
-
-    fig_child = px.bar(
-        child_poll, x="Pollutant", y="YLD",
-        color="Pollutant",
-        color_discrete_map=POLL_COLORS,
-        text="Share",
-        labels={"YLD": "Years Lived with Disability", "Pollutant": ""},
-        template="plotly_dark",
-    )
-    fig_child.update_traces(texttemplate="%{text}%", textposition="outside")
-    fig_child.update_layout(
-        **DARK, height=360, margin=dict(l=10, r=10, t=30, b=60),
-        showlegend=False,
-        xaxis=dict(gridcolor="rgba(0,0,0,0)"),
-        yaxis=dict(gridcolor="#2a2d3e"),
-    )
-    st.plotly_chart(fig_child, use_container_width=True)
-
-    insight(
-        "<strong>Children are not immune — they are harmed differently.</strong> "
-        "While children have near-zero attributable deaths, "
-        "<span class='hl'>PM2.5 causes 67% of childhood asthma disability</span> "
-        "with NO2 contributing the remaining 33%. "
-        "These pollutants cause tens of thousands of years of childhood asthma suffering across European cities. "
-        "Protecting children requires reducing both PM2.5 and NO2, not just one."
-    )
-
-
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# TAB 5 — CITY EXPLORER
-# Purpose: Interactive deep-dive into individual cities
-# Unique charts: City scatter (pollution vs deaths), data table
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-with tab5:
-
-    # ── INTERACTIVE COUNTRY FILTER FOR CITY SCATTER ───────────
-    section("City Pollution Level vs Death Rate — Top 200 Cities (Bubble = Total Deaths)")
-    st.caption(
-        "Each bubble is a city. X-axis = average air pollution. Y-axis = deaths per 100,000 people. "
-        "Bubble size = total deaths. Hover for city details. Use the filter to focus on specific countries."
-    )
-
-    available_countries = sorted(ad_cities["Country Or Territory"].dropna().unique().tolist())
-    sel_countries = st.multiselect(
-        "Filter by Country (leave empty to show all)",
-        options=available_countries,
-        key="city_country_filter",
-    )
-
-    city_scatter = (
-        ad_cities.groupby(["City Or Territory", "Country Or Territory"])
-        .agg(
-            Deaths=("Value", "sum"),
-            Per100k=("Value for 100k Of Affected Population", "sum"),
-            Pollution=(AVG_COL, "mean"),
-        ).reset_index()
-    )
-    city_scatter = city_scatter[city_scatter["Pollution"] < 500]
-
-    if sel_countries:
-        city_scatter = city_scatter[city_scatter["Country Or Territory"].isin(sel_countries)]
-
-    city_scatter_top = city_scatter.nlargest(200, "Per100k")
-
-    fig_city_sc = px.scatter(
-        city_scatter_top,
-        x="Pollution", y="Per100k",
-        hover_name="City Or Territory",
-        hover_data={
-            "Country Or Territory": True,
-            "Deaths": ":,",
-            "Pollution": ":.1f",
-            "Per100k": ":,",
-        },
-        size="Deaths", size_max=38,
-        color="Country Or Territory",
-        labels={
-            "Pollution": "Air pollution average (µg/m³)",
-            "Per100k":   "Deaths per 100k population",
-        },
-        template="plotly_dark",
-    )
-    fig_city_sc.update_layout(
-        **DARK, height=520, margin=M,
-        showlegend=True,
-        legend=dict(orientation="v", font=dict(size=10, color="#7a7d8f"), bgcolor="rgba(0,0,0,0)"),
-        xaxis=dict(gridcolor="#2a2d3e"),
-        yaxis=dict(gridcolor="#2a2d3e"),
-    )
-    st.plotly_chart(fig_city_sc, use_container_width=True)
-
-    insight(
-        "<strong>City clusters reveal national patterns.</strong> "
-        "Italian cities cluster upper-right (high pollution, high mortality). "
-        "Nordic cities cluster bottom-left (low pollution, low mortality). "
-        "<span class='hl'>Cities above 400 µg/m³ average pollution almost all exceed 400 deaths per 100k</span> — "
-        "a clear threshold effect suggesting a tipping point in harm."
-    )
-
-    st.markdown("---")
-
-    # ── SEARCHABLE DATA TABLE ─────────────────────────────────
-    section("City-Level Data Table — Top 100 Cities Ranked by Deaths per 100k")
-    st.caption(
-        "Sorted by deaths per 100,000 affected population. "
-        "CI = 95% confidence interval. Use the country filter above to narrow results."
-    )
+    st.markdown("### 🏙️ City-Level Drilldown — Top 100 Cities by Burden per 100k")
+    st.caption("Sorted by deaths per 100k affected population. CI = 95% confidence interval.")
 
     cols_needed = [
         "City Or Territory", "Country Or Territory", "Air Pollutant", "Outcome",
-        "Description Of Age Group", "Value",
-        "Value - lower CI", "Value - upper CI",
-        "Value for 100k Of Affected Population",
-        AVG_COL,
+        "Description Of Age Group", "Value", "Value - lower CI", "Value - upper CI",
+        "Value for 100k Of Affected Population", "Air Pollution Average [ug/m3]",
     ]
     table_df = (
         ad_cities[cols_needed]
@@ -767,15 +687,11 @@ with tab5:
             "Value - lower CI":                      "CI Lower",
             "Value - upper CI":                      "CI Upper",
             "Value for 100k Of Affected Population": "Per 100k",
-            AVG_COL:                                 "µg/m³ Avg",
+            "Air Pollution Average [ug/m3]":         "µg/m³ Avg",
         })
         .reset_index(drop=True)
     )
-
-    if sel_countries:
-        table_df = table_df[table_df["Country"].isin(sel_countries)]
-
-    st.dataframe(table_df, use_container_width=True, height=460)
+    st.dataframe(table_df, use_container_width=True, height=500)
 
 
 # ============================================================
@@ -783,8 +699,4 @@ with tab5:
 # ============================================================
 
 st.markdown("---")
-st.caption(
-    "🌍 Data source: WHO/EEA Urban Air Quality Dataset · 37 European countries · 973 cities · "
-    "3 pollutants (PM2.5, NO2, O3) · 2022 · WHO 2021 AQG Baseline  |  "
-    "Built with Streamlit & Plotly"
-)
+st.caption("🌍 Data source: WHO Air Quality & Health Dataset · 37 countries · 973 cities · 3 pollutants · 2022 · WHO 2021 AQG Baseline")
