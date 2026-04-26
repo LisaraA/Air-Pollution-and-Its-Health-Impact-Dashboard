@@ -239,12 +239,19 @@ with tab1:
                                   yaxis=dict(gridcolor="rgba(0,0,0,0)"))
     st.plotly_chart(fig_poll_share, use_container_width=True)
 
-    st.markdown("""
+    pm25_share = poll_deaths.loc[poll_deaths["Pollutant"] == "PM2.5", "Share (%)"].values
+    no2_share  = poll_deaths.loc[poll_deaths["Pollutant"] == "NO2",   "Share (%)"].values
+    o3_share   = poll_deaths.loc[poll_deaths["Pollutant"] == "O3",    "Share (%)"].values
+    pm25_pct = f"{pm25_share[0]:.0f}%" if len(pm25_share) else "N/A"
+    no2_pct  = f"{no2_share[0]:.0f}%"  if len(no2_share)  else "N/A"
+    o3_pct   = f"{o3_share[0]:.0f}%"   if len(o3_share)   else "N/A"
+
+    st.markdown(f"""
     <div class='insight-box'>
     <strong>💡 Key Finding:</strong>
-    <span class='highlight'>PM2.5 is responsible for ~83% of all pollution-attributable deaths</span> in Europe.
+    <span class='highlight'>PM2.5 is responsible for {pm25_pct} of all pollution-attributable deaths</span> in Europe.
     Fine particulate matter penetrates deep into the lungs and bloodstream, causing heart disease, stroke, dementia and lung cancer.
-    NO2 contributes 17%, primarily through stroke and diabetes. O3 accounts for only ~2%.
+    NO2 contributes {no2_pct}, primarily through stroke and diabetes. O3 accounts for only {o3_pct}.
     </div>
     """, unsafe_allow_html=True)
 
