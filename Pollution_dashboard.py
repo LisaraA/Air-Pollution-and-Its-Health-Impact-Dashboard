@@ -386,6 +386,31 @@ with tab2:
                              yaxis=dict(gridcolor="rgba(0,0,0,0)"))
     st.plotly_chart(fig_top_c, use_container_width=True)
 
+    # Dynamic insight for Top 15 chart
+    top15_sorted = top_countries.sort_values("Per100k", ascending=False)
+    top1    = top15_sorted.iloc[0]["Country"]
+    top1v   = top15_sorted.iloc[0]["Per100k"]
+    top2    = top15_sorted.iloc[1]["Country"]
+    top3    = top15_sorted.iloc[2]["Country"]
+    bottom  = top15_sorted.iloc[-1]["Country"]
+    bottomv = top15_sorted.iloc[-1]["Per100k"]
+    ratio   = top1v / bottomv
+
+    balkan = ["Bosnia and Herzegovina", "Serbia", "North Macedonia", "Croatia",
+              "Albania", "Montenegro", "Bulgaria", "Romania"]
+    balkan_in_top = top15_sorted[top15_sorted["Country"].isin(balkan)].shape[0]
+
+    st.markdown(f"""
+    <div class='insight-box'>
+    <strong>💡 Key Finding — Balkans dominate the mortality ranking:</strong>
+    <span class='highlight'>{top1} leads with {top1v:,.0f} deaths per 100k</span> — {ratio:.1f}× higher than
+    {bottom} at the bottom of this list ({bottomv:,.0f} per 100k).
+    {balkan_in_top} of the top 15 worst-affected countries are Balkan or Eastern European nations ({top1}, {top2}, {top3}…),
+    where older coal infrastructure, high solid-fuel home heating, and weaker vehicle emission standards compound pollution exposure.
+    This stark regional gap shows that EU membership and environmental regulation have a measurable protective effect on mortality.
+    </div>
+    """, unsafe_allow_html=True)
+
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # TAB 3 — DISEASE BREAKDOWN
