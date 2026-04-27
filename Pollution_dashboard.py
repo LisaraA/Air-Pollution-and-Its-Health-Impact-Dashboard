@@ -3,7 +3,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-# Page Layout
+# ============================================================
+# PAGE CONFIG
+# ============================================================
 
 st.set_page_config(
     page_title="Air Pollution & Health Impact Dashboard",
@@ -13,7 +15,7 @@ st.set_page_config(
 )
 
 # ============================================================
-# CUSTOM CSS — Professional Redesign
+# CUSTOM CSS
 # ============================================================
 
 st.markdown("""
@@ -24,51 +26,17 @@ st.markdown("""
     /* ── Keyframes ──────────────────────────────────────── */
     @keyframes slideUp   { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
     @keyframes popIn     { 0% { opacity:0; transform:scale(0.80); } 70% { transform:scale(1.05); } 100% { opacity:1; transform:scale(1); } }
-    @keyframes shimmer   { 0% { background-position:-600px 0; } 100% { background-position:600px 0; } }
     @keyframes glowPulse { 0%,100% { box-shadow:0 2px 16px rgba(0,0,0,0.12); } 50% { box-shadow:0 6px 24px rgba(0,0,0,0.22); } }
     @keyframes headSlide { from { opacity:0; transform:translateX(-14px); } to { opacity:1; transform:translateX(0); } }
     @keyframes barGrow   { from { width:0; } to { width:56px; } }
 
-    /* ── Hero banner ────────────────────────────────────── */
-    .hero-banner {
-        background: linear-gradient(135deg, #0a1628 0%, #102040 40%, #0d2235 100%);
-        border: 1px solid rgba(100,180,255,0.18);
-        border-top: 3px solid rgba(100,180,255,0.5);
-        border-radius: 14px;
-        padding: 28px 36px 22px 36px;
-        margin-bottom: 24px;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 4px 32px rgba(0,80,160,0.18);
-    }
-    .hero-banner::before {
-        content:""; position:absolute; top:-80px; right:-80px;
-        width:280px; height:280px;
-        background:radial-gradient(circle, rgba(30,120,255,0.13) 0%, transparent 65%);
-        border-radius:50%;
-    }
-    .hero-banner::after {
-        content:""; position:absolute; bottom:-40px; left:40px;
-        width:180px; height:180px;
-        background:radial-gradient(circle, rgba(0,200,180,0.07) 0%, transparent 70%);
-        border-radius:50%;
-    }
-    .hero-title   { font-size:2rem; font-weight:800; color:#e8f2ff; letter-spacing:-0.5px; margin:0 0 8px 0; text-align:center; }
-    .hero-subtitle{ font-size:0.92rem; color:#6a9cc4; margin:0 auto 18px auto; line-height:1.6; max-width:680px; text-align:center; }
-    .hero-badges  { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
-    .badge        { background:rgba(30,100,220,0.15); border:1px solid rgba(80,150,255,0.25); border-radius:20px; padding:4px 13px; font-size:0.74rem; color:#7ab3f7; font-weight:500; }
-    .badge-orange { background:rgba(247,145,79,0.12); border-color:rgba(247,145,79,0.28); color:#f7a86a; }
-    .badge-green  { background:rgba(0,200,160,0.10);  border-color:rgba(0,200,160,0.25);  color:#40d8b8; }
-
-    /* ── Section heading (custom HTML) ──────────────────── */
+    /* ── Section heading ────────────────────────────────── */
     .sec-heading {
         display: flex; align-items: center; gap: 10px;
         margin: 28px 0 6px 0;
         animation: headSlide 0.4s ease both;
     }
-    .sec-heading .sec-icon {
-        font-size: 1.3rem; line-height: 1;
-    }
+    .sec-heading .sec-icon { font-size: 1.3rem; line-height: 1; }
     .sec-heading .sec-text {
         font-size: 1.45rem; font-weight: 800;
         color: #e4f0ff; letter-spacing: -0.3px;
@@ -81,7 +49,7 @@ st.markdown("""
         animation: barGrow 0.5s ease 0.3s both;
     }
 
-    /* ── KPI card grid ───────────────────────────────────── */
+    /* ── KPI card grids ─────────────────────────────────── */
     .kpi-grid   { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:16px 0 24px 0; }
     .kpi-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:16px 0 24px 0; }
 
@@ -102,7 +70,7 @@ st.markdown("""
         content:""; position:absolute; top:0; left:0; right:0; height:2px;
         background: rgba(255,255,255,0.18);
     }
-    /* Corner glow — neutral only */
+    /* Corner glow — neutral */
     .kpi-card::after {
         content:""; position:absolute; top:-30px; right:-30px;
         width:100px; height:100px;
@@ -121,72 +89,28 @@ st.markdown("""
     .kpi-value { font-size:2.1rem; font-weight:900; color:#ffffff; letter-spacing:-1px; line-height:1; animation:popIn 0.55s cubic-bezier(0.34,1.56,0.64,1) both; animation-delay:0.2s; }
     .kpi-sub   { font-size:0.75rem; color:#3d5e80; margin-top:6px; }
 
-    /* Colour variants */
+    /* Colour variants — border only, no shadow overrides */
     .kpi-blue   { border-color:rgba(79,142,247,0.30); }
     .kpi-orange { border-color:rgba(247,145,79,0.30); }
     .kpi-green  { border-color:rgba(79,217,124,0.30); }
     .kpi-purple { border-color:rgba(124,79,247,0.30); }
 
-    /* ── Sidebar redesign ───────────────────────────────── */
+    /* ── Sidebar ────────────────────────────────────────── */
     [data-testid="stSidebar"] {
         background: linear-gradient(180deg, #0d1117 0%, #0f1a2e 100%) !important;
         border-right: 1px solid #1e3a5f !important;
     }
-    [data-testid="stSidebar"] * {
-        color: #c9d8ef !important;
-    }
-    .sidebar-logo {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 6px 0 14px 0;
-    }
-    .sidebar-logo-icon {
-        font-size: 2rem;
-        line-height: 1;
-    }
-    .sidebar-logo-text .title {
-        font-size: 1.05rem;
-        font-weight: 700;
-        color: #ffffff !important;
-        display: block;
-        line-height: 1.2;
-    }
-    .sidebar-logo-text .sub {
-        font-size: 0.72rem;
-        color: #5a7a9f !important;
-        display: block;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-    }
-    .sidebar-divider {
-        border: none;
-        border-top: 1px solid #1e3a5f;
-        margin: 12px 0;
-    }
-    .sidebar-section-label {
-        font-size: 0.68rem;
-        font-weight: 700;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: #3f6ea0 !important;
-        margin: 16px 0 8px 0;
-    }
-    .sidebar-meta {
-        background: rgba(79,142,247,0.07);
-        border: 1px solid rgba(79,142,247,0.15);
-        border-radius: 8px;
-        padding: 10px 12px;
-        margin-top: 12px;
-        font-size: 0.75rem;
-        color: #6a8ab0 !important;
-        line-height: 1.6;
-    }
-    .sidebar-meta strong {
-        color: #8aabcf !important;
-    }
+    [data-testid="stSidebar"] * { color: #c9d8ef !important; }
+    .sidebar-logo { display:flex; align-items:center; gap:10px; padding:6px 0 14px 0; }
+    .sidebar-logo-icon { font-size:2rem; line-height:1; }
+    .sidebar-logo-text .title { font-size:1.05rem; font-weight:700; color:#ffffff !important; display:block; line-height:1.2; }
+    .sidebar-logo-text .sub   { font-size:0.72rem; color:#5a7a9f !important; display:block; letter-spacing:0.04em; text-transform:uppercase; }
+    .sidebar-divider { border:none; border-top:1px solid #1e3a5f; margin:12px 0; }
+    .sidebar-section-label { font-size:0.68rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:#3f6ea0 !important; margin:16px 0 8px 0; }
+    .sidebar-meta { background:rgba(79,142,247,0.07); border:1px solid rgba(79,142,247,0.15); border-radius:8px; padding:10px 12px; margin-top:12px; font-size:0.75rem; color:#6a8ab0 !important; line-height:1.6; }
+    .sidebar-meta strong { color:#8aabcf !important; }
 
-    /* ── Tab bar redesign ───────────────────────────────── */
+    /* ── Tab bar ────────────────────────────────────────── */
     [data-testid="stTabs"] [data-baseweb="tab-list"] {
         background: rgba(13,17,23,0.8);
         border-bottom: 1px solid #1e3a5f;
@@ -195,19 +119,11 @@ st.markdown("""
         border-radius: 10px 10px 0 0;
     }
     [data-testid="stTabs"] [data-baseweb="tab"] {
-        background: transparent;
-        border: none;
-        border-radius: 8px 8px 0 0;
-        padding: 8px 18px;
-        font-size: 0.82rem;
-        font-weight: 500;
-        color: #5a7a9f;
-        transition: all 0.2s;
+        background: transparent; border: none; border-radius: 8px 8px 0 0;
+        padding: 8px 18px; font-size: 0.82rem; font-weight: 500;
+        color: #5a7a9f; transition: all 0.2s;
     }
-    [data-testid="stTabs"] [data-baseweb="tab"]:hover {
-        background: rgba(79,142,247,0.08);
-        color: #9ab8e0;
-    }
+    [data-testid="stTabs"] [data-baseweb="tab"]:hover { background:rgba(79,142,247,0.08); color:#9ab8e0; }
     [data-testid="stTabs"] [aria-selected="true"] {
         background: rgba(79,142,247,0.15) !important;
         color: #7ab3f7 !important;
@@ -230,15 +146,9 @@ st.markdown("""
     .insight-box strong { color: #c9d8ef; }
     .insight-box .highlight { color: #f7a86a; font-weight: 600; }
 
-    /* ── Divider styling ────────────────────────────────── */
+    /* ── Misc ───────────────────────────────────────────── */
     hr { border-color: #1e3050 !important; margin: 20px 0 !important; }
-
-    /* ── Dataframe ──────────────────────────────────────── */
-    [data-testid="stDataFrame"] {
-        border: 1px solid #1e3050;
-        border-radius: 10px;
-        overflow: hidden;
-    }
+    [data-testid="stDataFrame"] { border:1px solid #1e3050; border-radius:10px; overflow:hidden; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -260,13 +170,10 @@ SUPRA = [
     "European Union Countries",
 ]
 
-# Only exclude the true catch-all age group — keep all meaningful bands
-AGE_EXCLUDE = [">= 0 years of age"]
-# FIX 2: Exclude "All causes" rollup to avoid double counting
+AGE_EXCLUDE     = [">= 0 years of age"]
 OUTCOME_EXCLUDE = ["All causes"]
 
-PW_COL  = "Air Pollution Population Weighted Average [ug/m3]"
-AVG_COL = "Air Pollution Average [ug/m3]"
+PW_COL = "Air Pollution Population Weighted Average [ug/m3]"
 
 df_country = df_raw[
     (df_raw["City Or Territory"] == "All Urban Centres in a Country") &
@@ -284,7 +191,6 @@ df_cities = df_raw[
 
 # ============================================================
 # SIDEBAR FILTERS
-# FIX 1: All filters changed to multiselect
 # ============================================================
 
 with st.sidebar:
@@ -301,7 +207,6 @@ with st.sidebar:
     """, unsafe_allow_html=True)
     st.caption("Leave a filter empty to include all options.")
 
-    # FIX 1 + FIX 2: multiselect, "All causes" removed
     outcome_opts = sorted(
         df_raw["Outcome"].dropna()
         .loc[~df_raw["Outcome"].isin(OUTCOME_EXCLUDE)]
@@ -312,7 +217,6 @@ with st.sidebar:
     pollutant_opts = sorted(df_raw["Air Pollutant"].dropna().unique().tolist())
     sel_poll = st.multiselect("Air Pollutant", options=pollutant_opts)
 
-    # >= 0 excluded as catch-all; >= 30 has no country-level records in this dataset
     AGE_EXCLUDE_SIDEBAR = [">= 0 years of age", ">= 30 years of age"]
     age_opts = sorted(
         df_raw["Description Of Age Group"].dropna()
@@ -324,14 +228,18 @@ with st.sidebar:
     indicator_opts = sorted(df_raw["Health Indicator"].dropna().unique().tolist())
     sel_indicator = st.multiselect("Health Indicator", options=indicator_opts)
 
-    st.markdown("""
+    # Derive correct counts from data
+    n_countries = df_country["Country Or Territory"].nunique()
+    n_cities    = df_cities["City Or Territory"].nunique()
+
+    st.markdown(f"""
     <hr class="sidebar-divider"/>
     <div class="sidebar-meta">
         <strong>📂 Data Source</strong><br>
         WHO / EEA Urban Air Quality<br>
         2022 · WHO 2021 AQG Baseline<br><br>
         <strong>Coverage</strong><br>
-        37 countries · 973 cities<br>
+        {n_countries} countries · {n_cities} cities<br>
         3 pollutants: PM2.5, NO2, O3
     </div>
     """, unsafe_allow_html=True)
@@ -375,8 +283,7 @@ DARK = dict(
     font=dict(color="#e8eaf0", family="sans-serif"),
     margin=dict(l=10, r=10, t=40, b=10),
 )
-ACCENT  = ["#4f8ef7", "#f7914f", "#7c4ff7", "#4fd97c", "#f74f6e", "#f7d44f", "#4fd4f7"]
-BLUES   = px.colors.sequential.Blues_r
+ACCENT = ["#4f8ef7", "#f7914f", "#7c4ff7", "#4fd97c", "#f74f6e", "#f7d44f", "#4fd4f7"]
 
 # ============================================================
 # PAGE HEADER
@@ -395,7 +302,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================================
-# TABS — 6 tabs with full insight coverage
+# TABS
 # ============================================================
 
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
@@ -455,12 +362,17 @@ with tab1:
 
     st.markdown("---")
 
-    pm25 = df_country[(df_country["Air Pollutant"] == "PM2.5") & (df_country[PW_COL] < 500)][PW_COL].mean()
-    no2  = df_country[(df_country["Air Pollutant"] == "NO2")   & (df_country[PW_COL] < 500)][PW_COL].mean()
-    o3   = df_country[(df_country["Air Pollutant"] == "O3")    & (df_country[PW_COL] < 500)][PW_COL].mean()
+    # FIX: Pollutant averages now use filtered_country so sidebar filters apply
+    pm25 = filtered_country[(filtered_country["Air Pollutant"] == "PM2.5") & (filtered_country[PW_COL] < 500)][PW_COL].mean()
+    no2  = filtered_country[(filtered_country["Air Pollutant"] == "NO2")   & (filtered_country[PW_COL] < 500)][PW_COL].mean()
+    o3   = filtered_country[(filtered_country["Air Pollutant"] == "O3")    & (filtered_country[PW_COL] < 500)][PW_COL].mean()
     _pm25v = f"{pm25:.1f}" if pd.notna(pm25) else "N/A"
     _no2v  = f"{no2:.1f}"  if pd.notna(no2)  else "N/A"
     _o3v   = f"{o3:.1f}"   if pd.notna(o3)   else "N/A"
+
+    pm25_x = f"{round(pm25/5, 1)}×" if pd.notna(pm25) else "N/A"
+    no2_x  = f"{round(no2/10, 1)}×" if pd.notna(no2)  else "N/A"
+    o3_x   = f"{round(o3/60,  1)}×" if pd.notna(o3)   else "N/A"
 
     st.markdown("""
     <div class="sec-heading">
@@ -468,7 +380,8 @@ with tab1:
         <span class="sec-text">Population-Weighted Pollutant Averages</span>
     </div>
     <p style="font-size:0.8rem;color:#3d5e80;margin:0 0 4px 0;">
-        WHO 2021 guideline limits: PM2.5 = 5 µg/m³ · NO2 = 10 µg/m³ · O3 = 60 µg/m³ — all values shown <strong style="color:#f7a86a;">exceed</strong> WHO limits.
+        WHO 2021 guideline limits: PM2.5 = 5 µg/m³ · NO2 = 10 µg/m³ · O3 = 60 µg/m³ —
+        all values shown <strong style="color:#f7a86a;">exceed</strong> WHO limits.
     </p>
     """, unsafe_allow_html=True)
 
@@ -477,33 +390,39 @@ with tab1:
       <div class="kpi-card kpi-blue">
         <div class="kpi-label">PM2.5 Average</div>
         <div class="kpi-value">{_pm25v} <span style="font-size:1rem;font-weight:500;color:#ffffff;">µg/m³</span></div>
-        <div class="kpi-sub">WHO limit: 5 µg/m³ · {round(pm25/5,1) if pd.notna(pm25) else "N/A"}× above limit</div>
+        <div class="kpi-sub">WHO limit: 5 µg/m³ · {pm25_x} above limit</div>
       </div>
       <div class="kpi-card kpi-orange">
         <div class="kpi-label">NO2 Average</div>
         <div class="kpi-value">{_no2v} <span style="font-size:1rem;font-weight:500;color:#ffffff;">µg/m³</span></div>
-        <div class="kpi-sub">WHO limit: 10 µg/m³ · {round(no2/10,1) if pd.notna(no2) else "N/A"}× above limit</div>
+        <div class="kpi-sub">WHO limit: 10 µg/m³ · {no2_x} above limit</div>
       </div>
       <div class="kpi-card kpi-green">
         <div class="kpi-label">O3 Average</div>
         <div class="kpi-value">{_o3v} <span style="font-size:1rem;font-weight:500;color:#ffffff;">µg/m³</span></div>
-        <div class="kpi-sub">WHO limit: 60 µg/m³ · {round(o3/60,1) if pd.notna(o3) else "N/A"}× above limit</div>
+        <div class="kpi-sub">WHO limit: 60 µg/m³ · {o3_x} above limit</div>
       </div>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("""
+    # FIX: Dynamic insight values derived from filtered data
+    pm25_ratio = f"~{round(pm25/5, 1)}×"  if pd.notna(pm25) else "N/A"
+    no2_ratio  = f"~{round(no2/10, 1)}×" if pd.notna(no2)  else "N/A"
+    o3_val     = f"~{_o3v} µg/m³"         if pd.notna(o3)   else "N/A"
+    o3_pct_above = f"{round((o3/60 - 1)*100)}%" if pd.notna(o3) else "N/A"
+
+    st.markdown(f"""
     <div class='insight-box'>
     <strong>💡 What this means:</strong>
-    Europe's average PM2.5 is <span class='highlight'>~2.7× above</span> the WHO limit of 5 µg/m³.
-    NO2 is <span class='highlight'>~1.8× above</span> the 10 µg/m³ limit.
-    O3 at ~88 µg/m³ is <span class='highlight'>47% above</span> the 60 µg/m³ guideline — a widely overlooked pollutant that primarily harms lung function.
+    Europe's average PM2.5 is <span class='highlight'>{pm25_ratio} above</span> the WHO limit of 5 µg/m³.
+    NO2 is <span class='highlight'>{no2_ratio} above</span> the 10 µg/m³ limit.
+    O3 at {o3_val} is <span class='highlight'>{o3_pct_above} above</span> the 60 µg/m³ guideline —
+    a widely overlooked pollutant that primarily harms lung function.
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown("---")
 
-    # INSIGHT: Which pollutant kills the most
     st.markdown('<div class="sec-heading"><span class="sec-icon">☠️</span><span class="sec-text">Which Pollutant Causes the Most Deaths?</span></div>', unsafe_allow_html=True)
     poll_deaths = ad_country.groupby("Air Pollutant")["Value"].sum().reset_index()
     poll_deaths.columns = ["Pollutant", "Deaths"]
@@ -543,7 +462,6 @@ with tab1:
 
     st.markdown("---")
 
-    # FIX 5: Scatter — no text labels, rich hover tooltip
     st.markdown('<div class="sec-heading"><span class="sec-icon">🔵</span><span class="sec-text">Pollution Level vs Attributable Deaths — by Country</span></div>', unsafe_allow_html=True)
     st.caption("Hover over a bubble to see country name, pollution level, and total deaths. Bubble size = total deaths.")
 
@@ -619,8 +537,8 @@ with tab2:
 
     with col_map2:
         st.markdown('<div class="sec-heading"><span class="sec-icon">🗺️</span><span class="sec-text">PM2.5 Pollution Level by Country</span></div>', unsafe_allow_html=True)
-        pm25_map = df_country[
-            (df_country["Air Pollutant"] == "PM2.5") & (df_country[PW_COL] < 500)
+        pm25_map = filtered_country[
+            (filtered_country["Air Pollutant"] == "PM2.5") & (filtered_country[PW_COL] < 500)
         ].groupby("Country Or Territory")[PW_COL].mean().reset_index()
         pm25_map.columns = ["Country", "PM25"]
         fig_pm25_map = px.choropleth(
@@ -672,7 +590,6 @@ with tab2:
                              yaxis=dict(gridcolor="rgba(0,0,0,0)"))
     st.plotly_chart(fig_top_c, use_container_width=True)
 
-    # Dynamic insight for Top 15 chart
     top15_sorted = top_countries.sort_values("Per100k", ascending=False)
     top1    = top15_sorted.iloc[0]["Country"]
     top1v   = top15_sorted.iloc[0]["Per100k"]
@@ -680,7 +597,7 @@ with tab2:
     top3    = top15_sorted.iloc[2]["Country"]
     bottom  = top15_sorted.iloc[-1]["Country"]
     bottomv = top15_sorted.iloc[-1]["Per100k"]
-    ratio   = top1v / bottomv
+    ratio   = top1v / bottomv if bottomv > 0 else 0
 
     balkan = ["Bosnia and Herzegovina", "Serbia", "North Macedonia", "Croatia",
               "Albania", "Montenegro", "Bulgaria", "Romania"]
@@ -736,13 +653,15 @@ with tab3:
 
     st.markdown("---")
 
-    # FIX 6: Removed donut emoji from heading
-    st.markdown('<div class="sec-heading"><span class="sec-icon">🍩</span><span class="sec-text">Disease Outcome Split — Share of Deaths</span></div>', unsafe_allow_html=True)
+    # FIX: Removed 🍩 icon from heading (was left in by mistake), use pie chart icon instead
+    st.markdown('<div class="sec-heading"><span class="sec-icon">📊</span><span class="sec-text">Disease Outcome Split — Share of Deaths</span></div>', unsafe_allow_html=True)
     outcome_agg = ad_country.groupby("Outcome")["Value"].sum().reset_index()
+
+    # FIX: Use ACCENT palette — readable on dark background (Blues_r starts too dark)
     fig_donut = px.pie(
         outcome_agg, values="Value", names="Outcome",
         hole=0.55,
-        color_discrete_sequence=BLUES,
+        color_discrete_sequence=ACCENT,
         template="plotly_dark",
     )
     fig_donut.update_traces(
@@ -770,19 +689,18 @@ with tab3:
 
     st.markdown("---")
 
-    # Mortality vs Morbidity by Disease
     st.markdown('<div class="sec-heading"><span class="sec-icon">📊</span><span class="sec-text">Burden by Disease — Mortality vs Morbidity</span></div>', unsafe_allow_html=True)
     st.caption("Mortality = attributable deaths (AD). Morbidity = years lived with disability (YLD). Shows which diseases kill vs which disable.")
 
     mort_by_disease = (
-        df_country[df_country["Health Indicator"] == "Attributable deaths (AD)"]
+        filtered_country[filtered_country["Health Indicator"] == "Attributable deaths (AD)"]
         .groupby("Outcome")["Value"].sum().reset_index()
     )
     mort_by_disease.columns = ["Disease", "Value"]
     mort_by_disease["Category"] = "Mortality"
 
     morb_by_disease = (
-        df_country[df_country["Health Indicator"] == "Years Lived with Disability (YLD)"]
+        filtered_country[filtered_country["Health Indicator"] == "Years Lived with Disability (YLD)"]
         .groupby("Outcome")["Value"].sum().reset_index()
     )
     morb_by_disease.columns = ["Disease", "Value"]
@@ -822,23 +740,21 @@ with tab3:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab4:
 
-    # True age order present in df_country (>= 30 has no country-level records)
     _AGE_ORDER_RISK = ["< 19 years of age", ">= 19 years of age",
                        ">= 25 years of age", ">= 60 years of age"]
 
-    # Distinct colour per age group — used consistently in both charts
     _AGE_COLOURS = {
-        "< 19 years of age":  "#4f8ef7",   # blue
-        ">= 19 years of age": "#4fd97c",   # green
-        ">= 25 years of age": "#f7914f",   # orange
-        ">= 60 years of age": "#f74f6e",   # red/pink
+        "< 19 years of age":  "#4f8ef7",
+        ">= 19 years of age": "#4fd97c",
+        ">= 25 years of age": "#f7914f",
+        ">= 60 years of age": "#f74f6e",
     }
 
     st.markdown('<div class="sec-heading"><span class="sec-icon">👥</span><span class="sec-text">Who Is Most at Risk? — DALY per 100k by Age Group</span></div>', unsafe_allow_html=True)
     st.caption("DALY (Disability-Adjusted Life Years) captures both deaths and disability — "
                "giving a complete picture across all age groups including children.")
     age_agg = (
-        df_country[df_country["Health Indicator"] == "Disability-Adjusted Life Years (DALY)"]
+        filtered_country[filtered_country["Health Indicator"] == "Disability-Adjusted Life Years (DALY)"]
         .groupby("Description Of Age Group")["Value for 100k Of Affected Population"]
         .sum().reset_index()
     )
@@ -847,8 +763,8 @@ with tab4:
         lambda x: _AGE_ORDER_RISK.index(x) if x in _AGE_ORDER_RISK else 99
     )
     age_agg = age_agg.sort_values("_order").drop(columns="_order")
-    age_agg["Colour"] = age_agg["Age Group"].map(_AGE_COLOURS)
 
+    # FIX: Use barmode="group" — overlay caused bars to stack on top of each other
     fig_age = go.Figure()
     for _, row in age_agg.iterrows():
         fig_age.add_trace(go.Bar(
@@ -862,7 +778,7 @@ with tab4:
             showlegend=False,
         ))
     fig_age.update_layout(
-        **DARK, height=340, barmode="overlay",
+        **DARK, height=340, barmode="group",
         xaxis=dict(gridcolor="#2a2d3e", title="DALY per 100k"),
         yaxis=dict(gridcolor="rgba(0,0,0,0)",
                    categoryorder="array",
@@ -882,11 +798,10 @@ with tab4:
 
     st.markdown("---")
 
-    # Age × Disease heatmap — DALY so all groups have non-zero values
     st.markdown('<div class="sec-heading"><span class="sec-icon">🔥</span><span class="sec-text">Age Group × Disease — Which Age Group Gets Which Disease?</span></div>', unsafe_allow_html=True)
     st.caption("Using DALY (deaths + disability) so all age groups, including children, show their true burden.")
     age_disease = (
-        df_country[df_country["Health Indicator"] == "Disability-Adjusted Life Years (DALY)"]
+        filtered_country[filtered_country["Health Indicator"] == "Disability-Adjusted Life Years (DALY)"]
         .groupby(["Description Of Age Group", "Outcome"])["Value"]
         .sum().reset_index()
     )
@@ -976,8 +891,6 @@ with tab5:
     """, unsafe_allow_html=True)
 
 
-
-
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # TAB 6 — CITY DRILLDOWN
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1016,11 +929,15 @@ with tab6:
 # FOOTER
 # ============================================================
 
-st.markdown("""
+# Derive counts dynamically for accuracy
+_n_countries = df_country["Country Or Territory"].nunique()
+_n_cities    = df_cities["City Or Territory"].nunique()
+
+st.markdown(f"""
 <hr/>
 <div style="text-align:center; font-size:0.75rem; color:#3f6ea0; padding: 8px 0 4px 0;">
-    📂 <strong style="color:#5a7a9f;">Data Source:</strong> WHO Air Quality & Health Dataset &nbsp;·&nbsp;
-    40 Countries &nbsp;·&nbsp; 977 Cities &nbsp;·&nbsp; 3 Pollutants &nbsp;·&nbsp;
+    📂 <strong style="color:#5a7a9f;">Data Source:</strong> WHO Air Quality &amp; Health Dataset &nbsp;·&nbsp;
+    {_n_countries} Countries &nbsp;·&nbsp; {_n_cities} Cities &nbsp;·&nbsp; 3 Pollutants &nbsp;·&nbsp;
     Reference Year 2022 &nbsp;·&nbsp; WHO 2021 AQG Baseline
 </div>
 """, unsafe_allow_html=True)
