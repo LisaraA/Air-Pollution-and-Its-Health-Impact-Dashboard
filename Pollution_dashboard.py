@@ -226,9 +226,18 @@ with st.sidebar:
     """, unsafe_allow_html=True)
     st.caption("Each filter narrows the options below it — only valid combinations are shown.")
 
+    # ── Reset button ─────────────────────────────────────────
+    if st.button("🔄 Reset Filters", use_container_width=True):
+        st.session_state["outcome_ms"] = []
+        st.session_state["poll_ms"] = []
+        st.session_state["age_ms"] = []
+        st.session_state["_prev_poll"] = []
+        st.session_state["_prev_age"] = []
+        st.rerun()
+
     # ── Step 1: Outcome (always full list) 
     outcome_opts = sorted(df_raw["Outcome"].unique().tolist())
-    sel_outcome  = st.multiselect("Health Outcome", options=outcome_opts)
+    sel_outcome  = st.multiselect("Health Outcome", options=outcome_opts, key="outcome_ms")
 
     # ── Step 2: Pollutant — restricted to what exists for selected outcomes ─
     pool_for_poll = (
@@ -264,8 +273,8 @@ with st.sidebar:
     )
     st.session_state["_prev_age"] = sel_age
 
-    n_countries = df_country["Country Or Territory"].nunique()
-    n_cities    = df_cities["City Or Territory"].nunique()
+    n_countries = 40
+    n_cities    = 977
 
     st.markdown(f"""
     <hr class="sidebar-divider"/>
@@ -460,84 +469,89 @@ with tab1:
         st.markdown("---")
 
         st.markdown('<div class="sec-heading"><span class="sec-icon">☠️</span><span class="sec-text">Which Pollutant Causes the Most Deaths?</span></div>', unsafe_allow_html=True)
-        poll_deaths = ad_country.groupby("Air Pollutant")["Value"].sum().reset_index()
-        poll_deaths.columns = ["Pollutant", "Deaths"]
-        total_d = poll_deaths["Deaths"].sum()
-        poll_deaths["Share (%)"] = (poll_deaths["Deaths"] / total_d * 100).round(1)
+        if ad_country.empty:
+            _no_data_msg()
+        else:
+            poll_deaths = ad_country.groupby("Air Pollutant")["Value"].sum().reset_index()
+            poll_deaths.columns = ["Pollutant", "Deaths"]
+            total_d = poll_deaths["Deaths"].sum()
+            poll_deaths["Share (%)"] = (poll_deaths["Deaths"] / total_d * 100).round(1)
 
-        fig_poll_share = px.bar(
-            poll_deaths.sort_values("Deaths", ascending=True),
-            x="Deaths", y="Pollutant", orientation="h",
-            color="Pollutant",
-            color_discrete_map={"PM2.5": "#4f8ef7", "NO2": "#f7914f", "O3": "#4ff7a8"},
-            text="Share (%)",
-            labels={"Deaths": "Attributable Deaths", "Pollutant": ""},
-            template="plotly_dark",
-        )
-        fig_poll_share.update_traces(texttemplate="%{text}%", textposition="outside")
-        fig_poll_share.update_layout(**DARK, height=260, showlegend=False,
-                                      xaxis=dict(gridcolor="#2a2d3e"),
-                                      yaxis=dict(gridcolor="rgba(0,0,0,0)"))
-        st.plotly_chart(fig_poll_share, use_container_width=True)
+            fig_poll_share = px.bar(
+                poll_deaths.sort_values("Deaths", ascending=True),
+                x="Deaths", y="Pollutant", orientation="h",
+                color="Pollutant",
+                color_discrete_map={"PM2.5": "#4f8ef7", "NO2": "#f7914f", "O3": "#4ff7a8"},
+                text="Share (%)",
+                labels={"Deaths": "Attributable Deaths", "Pollutant": ""},
+                template="plotly_dark",
+            )
+            fig_poll_share.update_traces(texttemplate="%{text}%", textposition="outside")
+            fig_poll_share.update_layout(**DARK, height=260, showlegend=False,
+                                          xaxis=dict(gridcolor="#2a2d3e"),
+                                          yaxis=dict(gridcolor="rgba(0,0,0,0)"))
+            st.plotly_chart(fig_poll_share, use_container_width=True)
 
-        pm25_share = poll_deaths.loc[poll_deaths["Pollutant"] == "PM2.5", "Share (%)"].values
-        no2_share  = poll_deaths.loc[poll_deaths["Pollutant"] == "NO2",   "Share (%)"].values
-        o3_share   = poll_deaths.loc[poll_deaths["Pollutant"] == "O3",    "Share (%)"].values
-        pm25_pct = f"{pm25_share[0]:.0f}%" if len(pm25_share) else "N/A"
-        no2_pct  = f"{no2_share[0]:.0f}%"  if len(no2_share)  else "N/A"
-        o3_pct   = f"{o3_share[0]:.0f}%"   if len(o3_share)   else "N/A"
+            pm25_share = poll_deaths.loc[poll_deaths["Pollutant"] == "PM2.5", "Share (%)"].values
+            no2_share  = poll_deaths.loc[poll_deaths["Pollutant"] == "NO2",   "Share (%)"].values
+            o3_share   = poll_deaths.loc[poll_deaths["Pollutant"] == "O3",    "Share (%)"].values
+            pm25_pct = f"{pm25_share[0]:.0f}%" if len(pm25_share) else "N/A"
+            no2_pct  = f"{no2_share[0]:.0f}%"  if len(no2_share)  else "N/A"
+            o3_pct   = f"{o3_share[0]:.0f}%"   if len(o3_share)   else "N/A"
 
-        st.markdown(f"""
-        <div class='insight-box'>
-        <strong>💡 Key Finding:</strong>
-        <span class='highlight'>PM2.5 is responsible for {pm25_pct} of all pollution-attributable deaths</span> in Europe.
-        Fine particulate matter penetrates deep into the lungs and bloodstream, causing heart disease, stroke, dementia and lung cancer.
-        NO2 contributes {no2_pct}, primarily through stroke and diabetes. O3 accounts for only {o3_pct}.
-        </div>
-        """, unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class='insight-box'>
+            <strong>💡 Key Finding:</strong>
+            <span class='highlight'>PM2.5 is responsible for {pm25_pct} of all pollution-attributable deaths</span> in Europe.
+            Fine particulate matter penetrates deep into the lungs and bloodstream, causing heart disease, stroke, dementia and lung cancer.
+            NO2 contributes {no2_pct}, primarily through stroke and diabetes. O3 accounts for only {o3_pct}.
+            </div>
+            """, unsafe_allow_html=True)
 
         st.markdown("---")
 
         st.markdown('<div class="sec-heading"><span class="sec-icon">🔵</span><span class="sec-text">Pollution Level vs Attributable Deaths — by Country</span></div>', unsafe_allow_html=True)
         st.caption("Hover over a bubble to see country name, pollution level, and total deaths. Bubble size = total deaths.")
+        if ad_country.empty:
+            _no_data_msg()
+        else:
+            scatter_agg = (
+                ad_country.groupby("Country Or Territory")
+                .agg(Deaths=("Value", "sum"), Pollution=(PW_COL, "mean"))
+                .reset_index()
+            )
+            scatter_agg = scatter_agg[scatter_agg["Pollution"] < 500]
 
-        scatter_agg = (
-            ad_country.groupby("Country Or Territory")
-            .agg(Deaths=("Value", "sum"), Pollution=(PW_COL, "mean"))
-            .reset_index()
-        )
-        scatter_agg = scatter_agg[scatter_agg["Pollution"] < 500]
+            fig_scatter = px.scatter(
+                scatter_agg,
+                x="Pollution", y="Deaths",
+                hover_name="Country Or Territory",
+                hover_data={"Pollution": ":.1f", "Deaths": ":,", "Country Or Territory": False},
+                size="Deaths", size_max=50,
+                color="Deaths",
+                color_continuous_scale="Blues",
+                labels={
+                    "Pollution": "Population-weighted pollution avg (µg/m³)",
+                    "Deaths":    "Total attributable deaths",
+                },
+                template="plotly_dark",
+            )
+            fig_scatter.update_layout(
+                **DARK, height=450,
+                coloraxis_showscale=False,
+                xaxis=dict(gridcolor="#2a2d3e"),
+                yaxis=dict(gridcolor="#2a2d3e"),
+            )
+            st.plotly_chart(fig_scatter, use_container_width=True)
 
-        fig_scatter = px.scatter(
-            scatter_agg,
-            x="Pollution", y="Deaths",
-            hover_name="Country Or Territory",
-            hover_data={"Pollution": ":.1f", "Deaths": ":,", "Country Or Territory": False},
-            size="Deaths", size_max=50,
-            color="Deaths",
-            color_continuous_scale="Blues",
-            labels={
-                "Pollution": "Population-weighted pollution avg (µg/m³)",
-                "Deaths":    "Total attributable deaths",
-            },
-            template="plotly_dark",
-        )
-        fig_scatter.update_layout(
-            **DARK, height=450,
-            coloraxis_showscale=False,
-            xaxis=dict(gridcolor="#2a2d3e"),
-            yaxis=dict(gridcolor="#2a2d3e"),
-        )
-        st.plotly_chart(fig_scatter, use_container_width=True)
-
-        st.markdown("""
-        <div class='insight-box'>
-        <strong>💡 Key Finding — Population size distorts raw totals:</strong>
-        Italy and Germany have the highest total death counts due to large populations, not necessarily the worst pollution.
-        <span class='highlight'>Smaller Balkan countries (Bosnia, Serbia) have higher pollution but fewer total deaths.</span>
-        The per-100k rate (Geographic tab) is a much fairer comparison between countries.
-        </div>
-        """, unsafe_allow_html=True)
+            st.markdown("""
+            <div class='insight-box'>
+            <strong>💡 Key Finding — Population size distorts raw totals:</strong>
+            Italy and Germany have the highest total death counts due to large populations, not necessarily the worst pollution.
+            <span class='highlight'>Smaller Balkan countries (Bosnia, Serbia) have higher pollution but fewer total deaths.</span>
+            The per-100k rate (Geographic tab) is a much fairer comparison between countries.
+            </div>
+            """, unsafe_allow_html=True)
 
     # Tab 2 — Geographic
 with tab2:
@@ -974,8 +988,8 @@ with tab6:
 
 # Footer
 
-_n_countries = df_country["Country Or Territory"].nunique()
-_n_cities    = df_cities["City Or Territory"].nunique()
+_n_countries = 40
+_n_cities    = 977
 
 st.markdown(f"""
 <hr/>
