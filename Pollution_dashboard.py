@@ -25,7 +25,7 @@ st.markdown("""
     @keyframes slideUp   { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
     @keyframes popIn     { 0% { opacity:0; transform:scale(0.80); } 70% { transform:scale(1.05); } 100% { opacity:1; transform:scale(1); } }
     @keyframes shimmer   { 0% { background-position:-600px 0; } 100% { background-position:600px 0; } }
-    @keyframes glowPulse { 0%,100% { box-shadow:0 2px 16px rgba(79,142,247,0.08); } 50% { box-shadow:0 6px 30px rgba(79,142,247,0.26); } }
+    @keyframes glowPulse { 0%,100% { box-shadow:0 2px 16px rgba(0,0,0,0.12); } 50% { box-shadow:0 6px 24px rgba(0,0,0,0.22); } }
     @keyframes headSlide { from { opacity:0; transform:translateX(-14px); } to { opacity:1; transform:translateX(0); } }
     @keyframes barGrow   { from { width:0; } to { width:56px; } }
 
@@ -53,9 +53,9 @@ st.markdown("""
         background:radial-gradient(circle, rgba(0,200,180,0.07) 0%, transparent 70%);
         border-radius:50%;
     }
-    .hero-title   { font-size:2rem; font-weight:800; color:#e8f2ff; letter-spacing:-0.5px; margin:0 0 8px 0; }
-    .hero-subtitle{ font-size:0.92rem; color:#6a9cc4; margin:0 0 18px 0; line-height:1.6; max-width:680px; }
-    .hero-badges  { display:flex; flex-wrap:wrap; gap:8px; }
+    .hero-title   { font-size:2rem; font-weight:800; color:#e8f2ff; letter-spacing:-0.5px; margin:0 0 8px 0; text-align:center; }
+    .hero-subtitle{ font-size:0.92rem; color:#6a9cc4; margin:0 auto 18px auto; line-height:1.6; max-width:680px; text-align:center; }
+    .hero-badges  { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
     .badge        { background:rgba(30,100,220,0.15); border:1px solid rgba(80,150,255,0.25); border-radius:20px; padding:4px 13px; font-size:0.74rem; color:#7ab3f7; font-weight:500; }
     .badge-orange { background:rgba(247,145,79,0.12); border-color:rgba(247,145,79,0.28); color:#f7a86a; }
     .badge-green  { background:rgba(0,200,160,0.10);  border-color:rgba(0,200,160,0.25);  color:#40d8b8; }
@@ -95,20 +95,18 @@ st.markdown("""
         animation: slideUp 0.5s ease both, glowPulse 4s ease-in-out 1s infinite;
         cursor: default;
     }
-    .kpi-card:hover { transform:translateY(-5px); box-shadow:0 12px 36px rgba(79,142,247,0.28) !important; }
+    .kpi-card:hover { transform:translateY(-5px); box-shadow:0 12px 36px rgba(0,0,0,0.35) !important; }
 
-    /* Shimmer top accent */
+    /* Top accent — plain white */
     .kpi-card::before {
-        content:""; position:absolute; top:0; left:0; right:0; height:3px;
-        background: linear-gradient(90deg, #4f8ef7, #7c4ff7, #4fd97c, #f7914f, #4f8ef7);
-        background-size: 300% 3px;
-        animation: shimmer 3s linear infinite;
+        content:""; position:absolute; top:0; left:0; right:0; height:2px;
+        background: rgba(255,255,255,0.18);
     }
-    /* Corner glow */
+    /* Corner glow — neutral only */
     .kpi-card::after {
         content:""; position:absolute; top:-30px; right:-30px;
         width:100px; height:100px;
-        background:radial-gradient(circle, rgba(79,142,247,0.12) 0%, transparent 70%);
+        background:radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%);
         border-radius:50%; pointer-events:none;
     }
 
@@ -120,14 +118,14 @@ st.markdown("""
 
     .kpi-icon  { font-size:1.6rem; margin-bottom:10px; display:block; }
     .kpi-label { font-size:0.68rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:#4a6e9a; margin-bottom:6px; }
-    .kpi-value { font-size:2.1rem; font-weight:900; color:#d4e8ff; letter-spacing:-1px; line-height:1; animation:popIn 0.55s cubic-bezier(0.34,1.56,0.64,1) both; animation-delay:0.2s; }
+    .kpi-value { font-size:2.1rem; font-weight:900; color:#ffffff; letter-spacing:-1px; line-height:1; animation:popIn 0.55s cubic-bezier(0.34,1.56,0.64,1) both; animation-delay:0.2s; }
     .kpi-sub   { font-size:0.75rem; color:#3d5e80; margin-top:6px; }
 
     /* Colour variants */
-    .kpi-blue   { border-color:rgba(79,142,247,0.30); } .kpi-blue::after   { background:radial-gradient(circle,rgba(79,142,247,0.14) 0%,transparent 70%); }
-    .kpi-orange { border-color:rgba(247,145,79,0.30); } .kpi-orange::after { background:radial-gradient(circle,rgba(247,145,79,0.14) 0%,transparent 70%); } .kpi-orange .kpi-value { color:#ffd0a0; }
-    .kpi-green  { border-color:rgba(79,217,124,0.30); } .kpi-green::after  { background:radial-gradient(circle,rgba(79,217,124,0.14) 0%,transparent 70%); } .kpi-green .kpi-value  { color:#a0ffd0; }
-    .kpi-purple { border-color:rgba(124,79,247,0.30); } .kpi-purple::after { background:radial-gradient(circle,rgba(124,79,247,0.14) 0%,transparent 70%); } .kpi-purple .kpi-value { color:#d4b8ff; }
+    .kpi-blue   { border-color:rgba(79,142,247,0.30); }
+    .kpi-orange { border-color:rgba(247,145,79,0.30); }
+    .kpi-green  { border-color:rgba(79,217,124,0.30); }
+    .kpi-purple { border-color:rgba(124,79,247,0.30); }
 
     /* ── Sidebar redesign ───────────────────────────────── */
     [data-testid="stSidebar"] {
@@ -385,18 +383,13 @@ BLUES   = px.colors.sequential.Blues_r
 # ============================================================
 
 st.markdown("""
-<div class="hero-banner">
-    <div class="hero-title">🌍 Air Pollution & Health Impact in Europe</div>
-    <div class="hero-subtitle">
+<div style="text-align:center; padding: 8px 0 48px 0; margin-top:-40px;">
+    <div style="font-size:2.6rem; font-weight:900; color:#ffffff; letter-spacing:-1px; margin-bottom:12px; line-height:1.15;">
+        🌍 Air Pollution &amp; Health Impact in Europe
+    </div>
+    <div style="font-size:1.1rem; color:#6a9cc4; max-width:720px; margin:0 auto; line-height:1.6;">
         Quantifying the health burden of urban air pollution across 40 European countries —
         exploring mortality, disability, and disease patterns driven by PM2.5, NO2, and O3.
-    </div>
-    <div class="hero-badges">
-        <span class="badge">📅 Reference Year: 2022</span>
-        <span class="badge">🏛️ WHO 2021 AQG Baseline</span>
-        <span class="badge badge-orange">🏙️ 977 Cities</span>
-        <span class="badge badge-orange">🌐 40 Countries</span>
-        <span class="badge badge-green">💨 PM2.5 · NO2 · O3</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -482,21 +475,18 @@ with tab1:
     st.markdown(f"""
     <div class="kpi-grid-3">
       <div class="kpi-card kpi-blue">
-        <span class="kpi-icon">🔵</span>
         <div class="kpi-label">PM2.5 Average</div>
-        <div class="kpi-value">{_pm25v} <span style="font-size:1rem;font-weight:500;color:#4a6e9a;">µg/m³</span></div>
+        <div class="kpi-value">{_pm25v} <span style="font-size:1rem;font-weight:500;color:#ffffff;">µg/m³</span></div>
         <div class="kpi-sub">WHO limit: 5 µg/m³ · {round(pm25/5,1) if pd.notna(pm25) else "N/A"}× above limit</div>
       </div>
       <div class="kpi-card kpi-orange">
-        <span class="kpi-icon">🟠</span>
         <div class="kpi-label">NO2 Average</div>
-        <div class="kpi-value">{_no2v} <span style="font-size:1rem;font-weight:500;color:#4a6e9a;">µg/m³</span></div>
+        <div class="kpi-value">{_no2v} <span style="font-size:1rem;font-weight:500;color:#ffffff;">µg/m³</span></div>
         <div class="kpi-sub">WHO limit: 10 µg/m³ · {round(no2/10,1) if pd.notna(no2) else "N/A"}× above limit</div>
       </div>
       <div class="kpi-card kpi-green">
-        <span class="kpi-icon">🟢</span>
         <div class="kpi-label">O3 Average</div>
-        <div class="kpi-value">{_o3v} <span style="font-size:1rem;font-weight:500;color:#4a6e9a;">µg/m³</span></div>
+        <div class="kpi-value">{_o3v} <span style="font-size:1rem;font-weight:500;color:#ffffff;">µg/m³</span></div>
         <div class="kpi-sub">WHO limit: 60 µg/m³ · {round(o3/60,1) if pd.notna(o3) else "N/A"}× above limit</div>
       </div>
     </div>
