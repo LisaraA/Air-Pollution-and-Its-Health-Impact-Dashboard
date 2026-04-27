@@ -9,10 +9,9 @@ University of Westminster · 2025/26
 
 ```
 repository/
-├── app.py              ← Main Streamlit dashboard (the only file you run)
-├── data_prep.py        ← Optional: explore/verify your data
-├── requirements.txt    ← Python packages to install
-└── README.md           ← This file
+├── Pollution_Dashboard.py            ← Main Streamlit dashboard 
+├── requirements.txt                  ← Python packages to install
+└── README.md                         ← This file
 ```
 
 > **Important:** Place `DataExtract.csv` in the same folder as these files before running locally.
@@ -23,7 +22,7 @@ repository/
 ## Live App
 
 The dashboard is published on Streamlit Community Cloud:
-👉 **[Insert your Streamlit app link here]**
+👉 https://air-pollution-and-its-health-impact-dashboard-hfmfxfp3ujvph5jd.streamlit.app/
 
 ---
 
@@ -57,7 +56,7 @@ This installs Streamlit, Plotly, and Pandas. It takes about 1–2 minutes.
 
 ---
 
-### Step 4 — (Optional) Explore your data
+### Step 4 — Explore your data
 
 ```
 python data_prep.py
@@ -95,10 +94,9 @@ To stop the app, press `Ctrl + C` in the terminal.
 ## Folder structure (where to put DataExtract.csv)
 
 ```
-my_project/               ← your project folder
-├── DataExtract.csv       ← WHO dataset (put it HERE for local use)
-├── app.py
-├── data_prep.py
+my_project/               
+├── DataExtract.csv       
+├── Pollution_dashboard.py
 ├── requirements.txt
 └── README.md
 ```
@@ -107,9 +105,9 @@ my_project/               ← your project folder
 
 ## Deploying to Streamlit Community Cloud
 
-1. Push all files (including `DataExtract.csv`) to your **public** GitHub repository
+1. Push all files GitHub repository
 2. Go to [share.streamlit.io](https://share.streamlit.io) and sign in with GitHub
-3. Click **New app** → select your repository → set the main file to `app.py`
+3. Click **New app** → select your repository → set the main file to `Pollution_dashboard.py`
 4. Click **Deploy** — the app will be live in ~2 minutes
 
 ---
@@ -117,7 +115,7 @@ my_project/               ← your project folder
 ## Dataset
 
 - **Source:** WHO/EEA Urban Air Quality Dataset 2022
-- **Coverage:** 37 European countries · 973 cities · 3 pollutants (PM2.5, NO2, O3)
+- **Coverage:** 40 European countries · 977 cities · 3 pollutants (PM2.5, NO2, O3)
 - **Baseline:** WHO 2021 Air Quality Guidelines (AQG)
 - **Health indicators:** Attributable Deaths, YLL, DALY, YLD
 
