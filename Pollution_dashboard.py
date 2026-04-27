@@ -18,12 +18,18 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* ── Global font & background ───────────────────────── */
-    html, body, [class*="css"] {
-        font-family: 'Inter', 'Segoe UI', sans-serif;
-    }
+    /* ── Global ─────────────────────────────────────────── */
+    html, body, [class*="css"] { font-family: 'Inter', 'Segoe UI', sans-serif; }
 
-    /* ── Hero header banner ─────────────────────────────── */
+    /* ── Keyframes ──────────────────────────────────────── */
+    @keyframes slideUp   { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes popIn     { 0% { opacity:0; transform:scale(0.80); } 70% { transform:scale(1.05); } 100% { opacity:1; transform:scale(1); } }
+    @keyframes shimmer   { 0% { background-position:-600px 0; } 100% { background-position:600px 0; } }
+    @keyframes glowPulse { 0%,100% { box-shadow:0 2px 16px rgba(79,142,247,0.08); } 50% { box-shadow:0 6px 30px rgba(79,142,247,0.26); } }
+    @keyframes headSlide { from { opacity:0; transform:translateX(-14px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes barGrow   { from { width:0; } to { width:56px; } }
+
+    /* ── Hero banner ────────────────────────────────────── */
     .hero-banner {
         background: linear-gradient(135deg, #0a1628 0%, #102040 40%, #0d2235 100%);
         border: 1px solid rgba(100,180,255,0.18);
@@ -36,169 +42,92 @@ st.markdown("""
         box-shadow: 0 4px 32px rgba(0,80,160,0.18);
     }
     .hero-banner::before {
-        content: "";
-        position: absolute;
-        top: -80px; right: -80px;
-        width: 280px; height: 280px;
-        background: radial-gradient(circle, rgba(30,120,255,0.13) 0%, transparent 65%);
-        border-radius: 50%;
+        content:""; position:absolute; top:-80px; right:-80px;
+        width:280px; height:280px;
+        background:radial-gradient(circle, rgba(30,120,255,0.13) 0%, transparent 65%);
+        border-radius:50%;
     }
     .hero-banner::after {
-        content: "";
-        position: absolute;
-        bottom: -40px; left: 40px;
-        width: 180px; height: 180px;
-        background: radial-gradient(circle, rgba(0,200,180,0.07) 0%, transparent 70%);
-        border-radius: 50%;
+        content:""; position:absolute; bottom:-40px; left:40px;
+        width:180px; height:180px;
+        background:radial-gradient(circle, rgba(0,200,180,0.07) 0%, transparent 70%);
+        border-radius:50%;
     }
-    .hero-title {
-        font-size: 2rem;
-        font-weight: 800;
-        color: #e8f2ff;
-        letter-spacing: -0.5px;
-        margin: 0 0 8px 0;
-    }
-    .hero-subtitle {
-        font-size: 0.92rem;
-        color: #6a9cc4;
-        margin: 0 0 18px 0;
-        line-height: 1.6;
-        max-width: 680px;
-    }
-    .hero-badges {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-    .badge {
-        background: rgba(30,100,220,0.15);
-        border: 1px solid rgba(80,150,255,0.25);
-        border-radius: 20px;
-        padding: 4px 13px;
-        font-size: 0.74rem;
-        color: #7ab3f7;
-        font-weight: 500;
-        letter-spacing: 0.01em;
-    }
-    .badge-orange {
-        background: rgba(247,145,79,0.12);
-        border-color: rgba(247,145,79,0.28);
-        color: #f7a86a;
-    }
-    .badge-green {
-        background: rgba(0,200,160,0.10);
-        border-color: rgba(0,200,160,0.25);
-        color: #40d8b8;
-    }
-    .badge-purple {
-        background: rgba(160,80,255,0.10);
-        border-color: rgba(160,80,255,0.25);
-        color: #b87aff;
-    }
+    .hero-title   { font-size:2rem; font-weight:800; color:#e8f2ff; letter-spacing:-0.5px; margin:0 0 8px 0; }
+    .hero-subtitle{ font-size:0.92rem; color:#6a9cc4; margin:0 0 18px 0; line-height:1.6; max-width:680px; }
+    .hero-badges  { display:flex; flex-wrap:wrap; gap:8px; }
+    .badge        { background:rgba(30,100,220,0.15); border:1px solid rgba(80,150,255,0.25); border-radius:20px; padding:4px 13px; font-size:0.74rem; color:#7ab3f7; font-weight:500; }
+    .badge-orange { background:rgba(247,145,79,0.12); border-color:rgba(247,145,79,0.28); color:#f7a86a; }
+    .badge-green  { background:rgba(0,200,160,0.10);  border-color:rgba(0,200,160,0.25);  color:#40d8b8; }
 
-    /* ── Keyframe animations ────────────────────────────── */
-    @keyframes fadeSlideUp {
-        from { opacity: 0; transform: translateY(18px); }
-        to   { opacity: 1; transform: translateY(0); }
+    /* ── Section heading (custom HTML) ──────────────────── */
+    .sec-heading {
+        display: flex; align-items: center; gap: 10px;
+        margin: 28px 0 6px 0;
+        animation: headSlide 0.4s ease both;
     }
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to   { opacity: 1; }
+    .sec-heading .sec-icon {
+        font-size: 1.3rem; line-height: 1;
     }
-    @keyframes shimmer {
-        0%   { background-position: -400px 0; }
-        100% { background-position: 400px 0; }
-    }
-    @keyframes countUp {
-        from { opacity: 0; transform: scale(0.85); }
-        to   { opacity: 1; transform: scale(1); }
-    }
-    @keyframes glowPulse {
-        0%, 100% { box-shadow: 0 2px 16px rgba(79,142,247,0.10); }
-        50%       { box-shadow: 0 4px 28px rgba(79,142,247,0.28); }
-    }
-    @keyframes borderSlide {
-        from { background-size: 0% 2px; }
-        to   { background-size: 100% 2px; }
-    }
-    @keyframes headingReveal {
-        from { opacity: 0; transform: translateX(-12px); }
-        to   { opacity: 1; transform: translateX(0); }
-    }
-
-    /* ── Animated metric cards ──────────────────────────── */
-    [data-testid="metric-container"] {
-        background: linear-gradient(160deg, #0b1a30 0%, #071220 100%);
-        border: 1px solid rgba(79,142,247,0.18);
-        border-radius: 14px;
-        padding: 20px 24px 16px 24px;
+    .sec-heading .sec-text {
+        font-size: 1.45rem; font-weight: 800;
+        color: #e4f0ff; letter-spacing: -0.3px;
         position: relative;
-        overflow: hidden;
-        animation: fadeSlideUp 0.5s ease both, glowPulse 3.5s ease-in-out infinite;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-    [data-testid="metric-container"]:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 32px rgba(79,142,247,0.22) !important;
-    }
-    /* Animated top accent bar */
-    [data-testid="metric-container"]::before {
-        content: "";
-        position: absolute;
-        top: 0; left: 0; right: 0;
-        height: 2px;
-        background: linear-gradient(90deg, #4f8ef7, #7c4ff7, #4fd97c, #4f8ef7);
-        background-size: 200% 2px;
-        animation: shimmer 2.8s linear infinite;
-    }
-    /* Subtle glow orb in corner */
-    [data-testid="metric-container"]::after {
-        content: "";
-        position: absolute;
-        top: -30px; right: -30px;
-        width: 90px; height: 90px;
-        background: radial-gradient(circle, rgba(79,142,247,0.10) 0%, transparent 70%);
-        border-radius: 50%;
-        pointer-events: none;
-    }
-    [data-testid="metric-container"] label {
-        font-size: 0.68rem !important;
-        color: #4a6e9a !important;
-        font-weight: 700;
-        letter-spacing: 0.09em;
-        text-transform: uppercase;
-        animation: fadeIn 0.6s ease both;
-    }
-    [data-testid="metric-container"] [data-testid="stMetricValue"] {
-        font-size: 1.85rem !important;
-        font-weight: 900 !important;
-        color: #d4e8ff !important;
-        letter-spacing: -0.8px;
-        animation: countUp 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-        animation-delay: 0.1s;
+    .sec-heading .sec-text::after {
+        content:""; position:absolute; bottom:-5px; left:0;
+        height:3px; border-radius:2px;
+        background: linear-gradient(90deg, #4f8ef7, #7c4ff7, transparent);
+        animation: barGrow 0.5s ease 0.3s both;
     }
 
-    /* Stagger metric card animation delays */
-    [data-testid="column"]:nth-child(1) [data-testid="metric-container"] { animation-delay: 0.0s; }
-    [data-testid="column"]:nth-child(2) [data-testid="metric-container"] { animation-delay: 0.1s; }
-    [data-testid="column"]:nth-child(3) [data-testid="metric-container"] { animation-delay: 0.2s; }
-    [data-testid="column"]:nth-child(4) [data-testid="metric-container"] { animation-delay: 0.3s; }
+    /* ── KPI card grid ───────────────────────────────────── */
+    .kpi-grid   { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:16px 0 24px 0; }
+    .kpi-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:16px 0 24px 0; }
 
-    /* ── Animated section headings (h3) ─────────────────── */
-    h3 {
-        animation: headingReveal 0.45s ease both;
-        position: relative;
-        padding-bottom: 8px;
+    .kpi-card {
+        background: linear-gradient(160deg, #0d1f3a 0%, #081528 100%);
+        border: 1px solid rgba(79,142,247,0.15);
+        border-radius: 16px;
+        padding: 22px 22px 18px 22px;
+        position: relative; overflow: hidden;
+        transition: transform 0.22s ease, box-shadow 0.22s ease;
+        animation: slideUp 0.5s ease both, glowPulse 4s ease-in-out 1s infinite;
+        cursor: default;
     }
-    h3::after {
-        content: "";
-        position: absolute;
-        bottom: 0; left: 0;
-        height: 2px;
-        width: 48px;
-        background: linear-gradient(90deg, #4f8ef7, transparent);
-        border-radius: 2px;
+    .kpi-card:hover { transform:translateY(-5px); box-shadow:0 12px 36px rgba(79,142,247,0.28) !important; }
+
+    /* Shimmer top accent */
+    .kpi-card::before {
+        content:""; position:absolute; top:0; left:0; right:0; height:3px;
+        background: linear-gradient(90deg, #4f8ef7, #7c4ff7, #4fd97c, #f7914f, #4f8ef7);
+        background-size: 300% 3px;
+        animation: shimmer 3s linear infinite;
     }
+    /* Corner glow */
+    .kpi-card::after {
+        content:""; position:absolute; top:-30px; right:-30px;
+        width:100px; height:100px;
+        background:radial-gradient(circle, rgba(79,142,247,0.12) 0%, transparent 70%);
+        border-radius:50%; pointer-events:none;
+    }
+
+    /* Stagger entrance delays */
+    .kpi-card:nth-child(1) { animation-delay:0.00s; }
+    .kpi-card:nth-child(2) { animation-delay:0.10s; }
+    .kpi-card:nth-child(3) { animation-delay:0.20s; }
+    .kpi-card:nth-child(4) { animation-delay:0.30s; }
+
+    .kpi-icon  { font-size:1.6rem; margin-bottom:10px; display:block; }
+    .kpi-label { font-size:0.68rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:#4a6e9a; margin-bottom:6px; }
+    .kpi-value { font-size:2.1rem; font-weight:900; color:#d4e8ff; letter-spacing:-1px; line-height:1; animation:popIn 0.55s cubic-bezier(0.34,1.56,0.64,1) both; animation-delay:0.2s; }
+    .kpi-sub   { font-size:0.75rem; color:#3d5e80; margin-top:6px; }
+
+    /* Colour variants */
+    .kpi-blue   { border-color:rgba(79,142,247,0.30); } .kpi-blue::after   { background:radial-gradient(circle,rgba(79,142,247,0.14) 0%,transparent 70%); }
+    .kpi-orange { border-color:rgba(247,145,79,0.30); } .kpi-orange::after { background:radial-gradient(circle,rgba(247,145,79,0.14) 0%,transparent 70%); } .kpi-orange .kpi-value { color:#ffd0a0; }
+    .kpi-green  { border-color:rgba(79,217,124,0.30); } .kpi-green::after  { background:radial-gradient(circle,rgba(79,217,124,0.14) 0%,transparent 70%); } .kpi-green .kpi-value  { color:#a0ffd0; }
+    .kpi-purple { border-color:rgba(124,79,247,0.30); } .kpi-purple::after { background:radial-gradient(circle,rgba(124,79,247,0.14) 0%,transparent 70%); } .kpi-purple .kpi-value { color:#d4b8ff; }
 
     /* ── Sidebar redesign ───────────────────────────────── */
     [data-testid="stSidebar"] {
@@ -286,22 +215,6 @@ st.markdown("""
         color: #7ab3f7 !important;
         border-bottom: 2px solid #4f8ef7 !important;
         font-weight: 600 !important;
-    }
-
-    /* ── Section headings ───────────────────────────────── */
-    .section-heading {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #d0dff2;
-        margin: 20px 0 4px 0;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .section-caption {
-        font-size: 0.8rem;
-        color: #5a7a9f;
-        margin-bottom: 12px;
     }
 
     /* ── Insight cards ──────────────────────────────────── */
@@ -506,30 +419,88 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab1:
 
-    st.markdown("### 📊 Health Burden Summary")
-    k1, k2, k3, k4 = st.columns(4)
-    k1.metric("💀 Attributable Deaths",      fmt(ad_country["Value"].sum()))
-    k2.metric("⏳ Years of Life Lost (YLL)",  fmt(yll_country["Value"].sum()))
-    k3.metric("⚕️ DALYs",                    fmt(dal_country["Value"].sum()))
-    k4.metric("♿ Years Lived w/ Disability", fmt(yld_country["Value"].sum()))
+    st.markdown("""
+    <div class="sec-heading">
+        <span class="sec-icon">📊</span>
+        <span class="sec-text">Health Burden Summary</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    _ad  = fmt(ad_country["Value"].sum())
+    _yll = fmt(yll_country["Value"].sum())
+    _dal = fmt(dal_country["Value"].sum())
+    _yld = fmt(yld_country["Value"].sum())
+
+    st.markdown(f"""
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-blue">
+        <span class="kpi-icon">💀</span>
+        <div class="kpi-label">Attributable Deaths</div>
+        <div class="kpi-value">{_ad}</div>
+        <div class="kpi-sub">All pollutants · all ages</div>
+      </div>
+      <div class="kpi-card kpi-orange">
+        <span class="kpi-icon">⏳</span>
+        <div class="kpi-label">Years of Life Lost (YLL)</div>
+        <div class="kpi-value">{_yll}</div>
+        <div class="kpi-sub">Premature death burden</div>
+      </div>
+      <div class="kpi-card kpi-purple">
+        <span class="kpi-icon">⚕️</span>
+        <div class="kpi-label">DALYs</div>
+        <div class="kpi-value">{_dal}</div>
+        <div class="kpi-sub">Disability-adjusted life years</div>
+      </div>
+      <div class="kpi-card kpi-green">
+        <span class="kpi-icon">♿</span>
+        <div class="kpi-label">Years Lived w/ Disability</div>
+        <div class="kpi-value">{_yld}</div>
+        <div class="kpi-sub">Chronic illness burden</div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("---")
 
-    # FIX 4: Replaced red delta arrows with plain explanatory caption
-    st.markdown("### 🌫️ Population-Weighted Pollutant Averages (µg/m³)")
-    st.caption(
-        "Uses population-weighted average — accounts for actual exposure levels. Excludes supra-national aggregates. "
-        "**WHO 2021 guideline limits:** PM2.5 = 5 µg/m³ · NO2 = 10 µg/m³ · O3 = 60 µg/m³. "
-        "All values shown **exceed** WHO recommended limits."
-    )
     pm25 = df_country[(df_country["Air Pollutant"] == "PM2.5") & (df_country[PW_COL] < 500)][PW_COL].mean()
     no2  = df_country[(df_country["Air Pollutant"] == "NO2")   & (df_country[PW_COL] < 500)][PW_COL].mean()
     o3   = df_country[(df_country["Air Pollutant"] == "O3")    & (df_country[PW_COL] < 500)][PW_COL].mean()
+    _pm25v = f"{pm25:.1f}" if pd.notna(pm25) else "N/A"
+    _no2v  = f"{no2:.1f}"  if pd.notna(no2)  else "N/A"
+    _o3v   = f"{o3:.1f}"   if pd.notna(o3)   else "N/A"
 
-    p1, p2, p3 = st.columns(3)
-    p1.metric("PM2.5 (µg/m³)", f"{pm25:.1f}" if pd.notna(pm25) else "N/A")
-    p2.metric("NO2 (µg/m³)",   f"{no2:.1f}"  if pd.notna(no2)  else "N/A")
-    p3.metric("O3 (µg/m³)",    f"{o3:.1f}"   if pd.notna(o3)   else "N/A")
+    st.markdown("""
+    <div class="sec-heading">
+        <span class="sec-icon">🌫️</span>
+        <span class="sec-text">Population-Weighted Pollutant Averages</span>
+    </div>
+    <p style="font-size:0.8rem;color:#3d5e80;margin:0 0 4px 0;">
+        WHO 2021 guideline limits: PM2.5 = 5 µg/m³ · NO2 = 10 µg/m³ · O3 = 60 µg/m³ — all values shown <strong style="color:#f7a86a;">exceed</strong> WHO limits.
+    </p>
+    """, unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div class="kpi-grid-3">
+      <div class="kpi-card kpi-blue">
+        <span class="kpi-icon">🔵</span>
+        <div class="kpi-label">PM2.5 Average</div>
+        <div class="kpi-value">{_pm25v} <span style="font-size:1rem;font-weight:500;color:#4a6e9a;">µg/m³</span></div>
+        <div class="kpi-sub">WHO limit: 5 µg/m³ · {round(pm25/5,1) if pd.notna(pm25) else "N/A"}× above limit</div>
+      </div>
+      <div class="kpi-card kpi-orange">
+        <span class="kpi-icon">🟠</span>
+        <div class="kpi-label">NO2 Average</div>
+        <div class="kpi-value">{_no2v} <span style="font-size:1rem;font-weight:500;color:#4a6e9a;">µg/m³</span></div>
+        <div class="kpi-sub">WHO limit: 10 µg/m³ · {round(no2/10,1) if pd.notna(no2) else "N/A"}× above limit</div>
+      </div>
+      <div class="kpi-card kpi-green">
+        <span class="kpi-icon">🟢</span>
+        <div class="kpi-label">O3 Average</div>
+        <div class="kpi-value">{_o3v} <span style="font-size:1rem;font-weight:500;color:#4a6e9a;">µg/m³</span></div>
+        <div class="kpi-sub">WHO limit: 60 µg/m³ · {round(o3/60,1) if pd.notna(o3) else "N/A"}× above limit</div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("""
     <div class='insight-box'>
@@ -543,7 +514,7 @@ with tab1:
     st.markdown("---")
 
     # INSIGHT: Which pollutant kills the most
-    st.markdown("### ☠️ Which Pollutant Causes the Most Deaths?")
+    st.markdown('<div class="sec-heading"><span class="sec-icon">☠️</span><span class="sec-text">Which Pollutant Causes the Most Deaths?</span></div>', unsafe_allow_html=True)
     poll_deaths = ad_country.groupby("Air Pollutant")["Value"].sum().reset_index()
     poll_deaths.columns = ["Pollutant", "Deaths"]
     total_d = poll_deaths["Deaths"].sum()
@@ -583,7 +554,7 @@ with tab1:
     st.markdown("---")
 
     # FIX 5: Scatter — no text labels, rich hover tooltip
-    st.markdown("### 🔵 Pollution Level vs Attributable Deaths — by Country")
+    st.markdown('<div class="sec-heading"><span class="sec-icon">🔵</span><span class="sec-text">Pollution Level vs Attributable Deaths — by Country</span></div>', unsafe_allow_html=True)
     st.caption("Hover over a bubble to see country name, pollution level, and total deaths. Bubble size = total deaths.")
 
     scatter_agg = (
@@ -633,7 +604,7 @@ with tab2:
     col_map1, col_map2 = st.columns(2)
 
     with col_map1:
-        st.markdown("### 🗺️ Deaths per 100k by Country")
+        st.markdown('<div class="sec-heading"><span class="sec-icon">🗺️</span><span class="sec-text">Deaths per 100k by Country</span></div>', unsafe_allow_html=True)
         map_agg = (
             ad_country.groupby("Country Or Territory")["Value for 100k Of Affected Population"]
             .sum().reset_index()
@@ -657,7 +628,7 @@ with tab2:
         st.plotly_chart(fig_map, use_container_width=True)
 
     with col_map2:
-        st.markdown("### 🗺️ PM2.5 Pollution Level by Country")
+        st.markdown('<div class="sec-heading"><span class="sec-icon">🗺️</span><span class="sec-text">PM2.5 Pollution Level by Country</span></div>', unsafe_allow_html=True)
         pm25_map = df_country[
             (df_country["Air Pollutant"] == "PM2.5") & (df_country[PW_COL] < 500)
         ].groupby("Country Or Territory")[PW_COL].mean().reset_index()
@@ -691,7 +662,7 @@ with tab2:
 
     st.markdown("---")
 
-    st.markdown("### 🏆 Top 15 Countries — Deaths per 100k")
+    st.markdown('<div class="sec-heading"><span class="sec-icon">🏆</span><span class="sec-text">Top 15 Countries — Deaths per 100k</span></div>', unsafe_allow_html=True)
     st.caption("Per-100k is a fairer comparison than total deaths as it adjusts for population size.")
     top_countries = (
         ad_country.groupby("Country Or Territory")["Value for 100k Of Affected Population"]
@@ -742,7 +713,7 @@ with tab2:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab3:
 
-    st.markdown("### 🧬 Pollutant × Disease Heatmap — Which Pollutant Causes Which Disease?")
+    st.markdown('<div class="sec-heading"><span class="sec-icon">🧬</span><span class="sec-text">Pollutant × Disease Heatmap — Which Pollutant Causes Which Disease?</span></div>', unsafe_allow_html=True)
     st.caption("Each cell shows attributable deaths for that disease × pollutant combination.")
 
     hm_long = (
@@ -776,7 +747,7 @@ with tab3:
     st.markdown("---")
 
     # FIX 6: Removed donut emoji from heading
-    st.markdown("### Disease Outcome Split — Share of Deaths")
+    st.markdown('<div class="sec-heading"><span class="sec-icon">🍩</span><span class="sec-text">Disease Outcome Split — Share of Deaths</span></div>', unsafe_allow_html=True)
     outcome_agg = ad_country.groupby("Outcome")["Value"].sum().reset_index()
     fig_donut = px.pie(
         outcome_agg, values="Value", names="Outcome",
@@ -810,7 +781,7 @@ with tab3:
     st.markdown("---")
 
     # Mortality vs Morbidity by Disease
-    st.markdown("### 📊 Burden by Disease — Mortality vs Morbidity")
+    st.markdown('<div class="sec-heading"><span class="sec-icon">📊</span><span class="sec-text">Burden by Disease — Mortality vs Morbidity</span></div>', unsafe_allow_html=True)
     st.caption("Mortality = attributable deaths (AD). Morbidity = years lived with disability (YLD). Shows which diseases kill vs which disable.")
 
     mort_by_disease = (
@@ -873,7 +844,7 @@ with tab4:
         ">= 60 years of age": "#f74f6e",   # red/pink
     }
 
-    st.markdown("### 👥 Who Is Most at Risk? — DALY per 100k by Age Group")
+    st.markdown('<div class="sec-heading"><span class="sec-icon">👥</span><span class="sec-text">Who Is Most at Risk? — DALY per 100k by Age Group</span></div>', unsafe_allow_html=True)
     st.caption("DALY (Disability-Adjusted Life Years) captures both deaths and disability — "
                "giving a complete picture across all age groups including children.")
     age_agg = (
@@ -922,7 +893,7 @@ with tab4:
     st.markdown("---")
 
     # Age × Disease heatmap — DALY so all groups have non-zero values
-    st.markdown("### 🔥 Age Group × Disease — Which Age Group Gets Which Disease?")
+    st.markdown('<div class="sec-heading"><span class="sec-icon">🔥</span><span class="sec-text">Age Group × Disease — Which Age Group Gets Which Disease?</span></div>', unsafe_allow_html=True)
     st.caption("Using DALY (deaths + disability) so all age groups, including children, show their true burden.")
     age_disease = (
         df_country[df_country["Health Indicator"] == "Disability-Adjusted Life Years (DALY)"]
@@ -961,7 +932,7 @@ with tab4:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab5:
 
-    st.markdown("### ⚖️ Premature Death vs Long-Term Disability — by Disease")
+    st.markdown('<div class="sec-heading"><span class="sec-icon">⚖️</span><span class="sec-text">Premature Death vs Long-Term Disability — by Disease</span></div>', unsafe_allow_html=True)
     st.caption(
         "YLL = Years of Life Lost (premature death). "
         "YLD = Years Lived with Disability (chronic illness). "
@@ -1022,7 +993,7 @@ with tab5:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab6:
 
-    st.markdown("### 🏙️ City-Level Drilldown — Top 100 Cities by Burden per 100k")
+    st.markdown('<div class="sec-heading"><span class="sec-icon">🏙️</span><span class="sec-text">City-Level Drilldown — Top 100 Cities by Burden per 100k</span></div>', unsafe_allow_html=True)
     st.caption("Sorted by deaths per 100k affected population. CI = 95% confidence interval.")
 
     cols_needed = [
