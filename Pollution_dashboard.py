@@ -6,31 +6,328 @@ import streamlit as st
 # Page Layout
 
 st.set_page_config(
-    page_title="Air Pollution & Health Impact",
+    page_title="Air Pollution & Health Impact Dashboard",
     page_icon="🌍",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 # ============================================================
-# CUSTOM CSS
+# CUSTOM CSS — Professional Redesign
 # ============================================================
 
 st.markdown("""
 <style>
-    .insight-box {
-        background: linear-gradient(135deg, #1a1d2e 0%, #16192b 100%);
-        border: 1px solid #2e3250;
-        border-left: 4px solid #4f8ef7;
+    /* ── Global font & background ───────────────────────── */
+    html, body, [class*="css"] {
+        font-family: 'Inter', 'Segoe UI', sans-serif;
+    }
+
+    /* ── Hero header banner ─────────────────────────────── */
+    .hero-banner {
+        background: linear-gradient(135deg, #0a1628 0%, #102040 40%, #0d2235 100%);
+        border: 1px solid rgba(100,180,255,0.18);
+        border-top: 3px solid rgba(100,180,255,0.5);
+        border-radius: 14px;
+        padding: 28px 36px 22px 36px;
+        margin-bottom: 24px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 32px rgba(0,80,160,0.18);
+    }
+    .hero-banner::before {
+        content: "";
+        position: absolute;
+        top: -80px; right: -80px;
+        width: 280px; height: 280px;
+        background: radial-gradient(circle, rgba(30,120,255,0.13) 0%, transparent 65%);
+        border-radius: 50%;
+    }
+    .hero-banner::after {
+        content: "";
+        position: absolute;
+        bottom: -40px; left: 40px;
+        width: 180px; height: 180px;
+        background: radial-gradient(circle, rgba(0,200,180,0.07) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+    .hero-title {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #e8f2ff;
+        letter-spacing: -0.5px;
+        margin: 0 0 8px 0;
+    }
+    .hero-subtitle {
+        font-size: 0.92rem;
+        color: #6a9cc4;
+        margin: 0 0 18px 0;
+        line-height: 1.6;
+        max-width: 680px;
+    }
+    .hero-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .badge {
+        background: rgba(30,100,220,0.15);
+        border: 1px solid rgba(80,150,255,0.25);
+        border-radius: 20px;
+        padding: 4px 13px;
+        font-size: 0.74rem;
+        color: #7ab3f7;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+    }
+    .badge-orange {
+        background: rgba(247,145,79,0.12);
+        border-color: rgba(247,145,79,0.28);
+        color: #f7a86a;
+    }
+    .badge-green {
+        background: rgba(0,200,160,0.10);
+        border-color: rgba(0,200,160,0.25);
+        color: #40d8b8;
+    }
+    .badge-purple {
+        background: rgba(160,80,255,0.10);
+        border-color: rgba(160,80,255,0.25);
+        color: #b87aff;
+    }
+
+    /* ── Keyframe animations ────────────────────────────── */
+    @keyframes fadeSlideUp {
+        from { opacity: 0; transform: translateY(18px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+    @keyframes shimmer {
+        0%   { background-position: -400px 0; }
+        100% { background-position: 400px 0; }
+    }
+    @keyframes countUp {
+        from { opacity: 0; transform: scale(0.85); }
+        to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes glowPulse {
+        0%, 100% { box-shadow: 0 2px 16px rgba(79,142,247,0.10); }
+        50%       { box-shadow: 0 4px 28px rgba(79,142,247,0.28); }
+    }
+    @keyframes borderSlide {
+        from { background-size: 0% 2px; }
+        to   { background-size: 100% 2px; }
+    }
+    @keyframes headingReveal {
+        from { opacity: 0; transform: translateX(-12px); }
+        to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* ── Animated metric cards ──────────────────────────── */
+    [data-testid="metric-container"] {
+        background: linear-gradient(160deg, #0b1a30 0%, #071220 100%);
+        border: 1px solid rgba(79,142,247,0.18);
+        border-radius: 14px;
+        padding: 20px 24px 16px 24px;
+        position: relative;
+        overflow: hidden;
+        animation: fadeSlideUp 0.5s ease both, glowPulse 3.5s ease-in-out infinite;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    [data-testid="metric-container"]:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 32px rgba(79,142,247,0.22) !important;
+    }
+    /* Animated top accent bar */
+    [data-testid="metric-container"]::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, #4f8ef7, #7c4ff7, #4fd97c, #4f8ef7);
+        background-size: 200% 2px;
+        animation: shimmer 2.8s linear infinite;
+    }
+    /* Subtle glow orb in corner */
+    [data-testid="metric-container"]::after {
+        content: "";
+        position: absolute;
+        top: -30px; right: -30px;
+        width: 90px; height: 90px;
+        background: radial-gradient(circle, rgba(79,142,247,0.10) 0%, transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    [data-testid="metric-container"] label {
+        font-size: 0.68rem !important;
+        color: #4a6e9a !important;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        animation: fadeIn 0.6s ease both;
+    }
+    [data-testid="metric-container"] [data-testid="stMetricValue"] {
+        font-size: 1.85rem !important;
+        font-weight: 900 !important;
+        color: #d4e8ff !important;
+        letter-spacing: -0.8px;
+        animation: countUp 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        animation-delay: 0.1s;
+    }
+
+    /* Stagger metric card animation delays */
+    [data-testid="column"]:nth-child(1) [data-testid="metric-container"] { animation-delay: 0.0s; }
+    [data-testid="column"]:nth-child(2) [data-testid="metric-container"] { animation-delay: 0.1s; }
+    [data-testid="column"]:nth-child(3) [data-testid="metric-container"] { animation-delay: 0.2s; }
+    [data-testid="column"]:nth-child(4) [data-testid="metric-container"] { animation-delay: 0.3s; }
+
+    /* ── Animated section headings (h3) ─────────────────── */
+    h3 {
+        animation: headingReveal 0.45s ease both;
+        position: relative;
+        padding-bottom: 8px;
+    }
+    h3::after {
+        content: "";
+        position: absolute;
+        bottom: 0; left: 0;
+        height: 2px;
+        width: 48px;
+        background: linear-gradient(90deg, #4f8ef7, transparent);
+        border-radius: 2px;
+    }
+
+    /* ── Sidebar redesign ───────────────────────────────── */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #0d1117 0%, #0f1a2e 100%) !important;
+        border-right: 1px solid #1e3a5f !important;
+    }
+    [data-testid="stSidebar"] * {
+        color: #c9d8ef !important;
+    }
+    .sidebar-logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 0 14px 0;
+    }
+    .sidebar-logo-icon {
+        font-size: 2rem;
+        line-height: 1;
+    }
+    .sidebar-logo-text .title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #ffffff !important;
+        display: block;
+        line-height: 1.2;
+    }
+    .sidebar-logo-text .sub {
+        font-size: 0.72rem;
+        color: #5a7a9f !important;
+        display: block;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+    .sidebar-divider {
+        border: none;
+        border-top: 1px solid #1e3a5f;
+        margin: 12px 0;
+    }
+    .sidebar-section-label {
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #3f6ea0 !important;
+        margin: 16px 0 8px 0;
+    }
+    .sidebar-meta {
+        background: rgba(79,142,247,0.07);
+        border: 1px solid rgba(79,142,247,0.15);
         border-radius: 8px;
-        padding: 14px 18px;
-        margin: 8px 0 16px 0;
-        font-size: 0.88rem;
-        color: #b0b8d8;
+        padding: 10px 12px;
+        margin-top: 12px;
+        font-size: 0.75rem;
+        color: #6a8ab0 !important;
         line-height: 1.6;
     }
-    .insight-box strong { color: #e8eaf0; }
-    .insight-box .highlight { color: #f7914f; font-weight: 600; }
+    .sidebar-meta strong {
+        color: #8aabcf !important;
+    }
+
+    /* ── Tab bar redesign ───────────────────────────────── */
+    [data-testid="stTabs"] [data-baseweb="tab-list"] {
+        background: rgba(13,17,23,0.8);
+        border-bottom: 1px solid #1e3a5f;
+        padding: 4px 4px 0 4px;
+        gap: 2px;
+        border-radius: 10px 10px 0 0;
+    }
+    [data-testid="stTabs"] [data-baseweb="tab"] {
+        background: transparent;
+        border: none;
+        border-radius: 8px 8px 0 0;
+        padding: 8px 18px;
+        font-size: 0.82rem;
+        font-weight: 500;
+        color: #5a7a9f;
+        transition: all 0.2s;
+    }
+    [data-testid="stTabs"] [data-baseweb="tab"]:hover {
+        background: rgba(79,142,247,0.08);
+        color: #9ab8e0;
+    }
+    [data-testid="stTabs"] [aria-selected="true"] {
+        background: rgba(79,142,247,0.15) !important;
+        color: #7ab3f7 !important;
+        border-bottom: 2px solid #4f8ef7 !important;
+        font-weight: 600 !important;
+    }
+
+    /* ── Section headings ───────────────────────────────── */
+    .section-heading {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #d0dff2;
+        margin: 20px 0 4px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .section-caption {
+        font-size: 0.8rem;
+        color: #5a7a9f;
+        margin-bottom: 12px;
+    }
+
+    /* ── Insight cards ──────────────────────────────────── */
+    .insight-box {
+        background: linear-gradient(135deg, #0f1622 0%, #0d1420 100%);
+        border: 1px solid #1e3050;
+        border-left: 3px solid #4f8ef7;
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin: 8px 0 18px 0;
+        font-size: 0.85rem;
+        color: #8aaace;
+        line-height: 1.7;
+    }
+    .insight-box strong { color: #c9d8ef; }
+    .insight-box .highlight { color: #f7a86a; font-weight: 600; }
+
+    /* ── Divider styling ────────────────────────────────── */
+    hr { border-color: #1e3050 !important; margin: 20px 0 !important; }
+
+    /* ── Dataframe ──────────────────────────────────────── */
+    [data-testid="stDataFrame"] {
+        border: 1px solid #1e3050;
+        border-radius: 10px;
+        overflow: hidden;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -80,11 +377,17 @@ df_cities = df_raw[
 # ============================================================
 
 with st.sidebar:
-    st.markdown("## 🌍 Air Pollution")
-    st.markdown("### Health Impact Dashboard")
-    st.markdown("Europe · 2022 · WHO Baseline")
-    st.markdown("---")
-    st.markdown("### 🔎 Filters")
+    st.markdown("""
+    <div class="sidebar-logo">
+        <span class="sidebar-logo-icon">🌍</span>
+        <div class="sidebar-logo-text">
+            <span class="title">Air Pollution & Health</span>
+            <span class="sub">Europe · WHO 2021 AQG · 2022</span>
+        </div>
+    </div>
+    <hr class="sidebar-divider"/>
+    <div class="sidebar-section-label">🔎 Filter Data</div>
+    """, unsafe_allow_html=True)
     st.caption("Leave a filter empty to include all options.")
 
     # FIX 1 + FIX 2: multiselect, "All causes" removed
@@ -110,8 +413,17 @@ with st.sidebar:
     indicator_opts = sorted(df_raw["Health Indicator"].dropna().unique().tolist())
     sel_indicator = st.multiselect("Health Indicator", options=indicator_opts)
 
-    st.markdown("---")
-    st.caption("📂 WHO/EEA Urban Air Quality 2022\n37 countries · 973 cities · 3 pollutants")
+    st.markdown("""
+    <hr class="sidebar-divider"/>
+    <div class="sidebar-meta">
+        <strong>📂 Data Source</strong><br>
+        WHO / EEA Urban Air Quality<br>
+        2022 · WHO 2021 AQG Baseline<br><br>
+        <strong>Coverage</strong><br>
+        37 countries · 973 cities<br>
+        3 pollutants: PM2.5, NO2, O3
+    </div>
+    """, unsafe_allow_html=True)
 
 # ============================================================
 # APPLY FILTERS — empty list = no filter (show all)
@@ -159,9 +471,22 @@ BLUES   = px.colors.sequential.Blues_r
 # PAGE HEADER
 # ============================================================
 
-st.markdown("# 🌍 Air Pollution & Health Impact in Europe")
-st.markdown("Exploring the health burden of **PM2.5**, **NO2**, and **O3** across 37 European countries · 2022 · WHO 2021 AQG Baseline")
-st.markdown("---")
+st.markdown("""
+<div class="hero-banner">
+    <div class="hero-title">🌍 Air Pollution & Health Impact in Europe</div>
+    <div class="hero-subtitle">
+        Quantifying the health burden of urban air pollution across 40 European countries —
+        exploring mortality, disability, and disease patterns driven by PM2.5, NO2, and O3.
+    </div>
+    <div class="hero-badges">
+        <span class="badge">📅 Reference Year: 2022</span>
+        <span class="badge">🏛️ WHO 2021 AQG Baseline</span>
+        <span class="badge badge-orange">🏙️ 977 Cities</span>
+        <span class="badge badge-orange">🌐 40 Countries</span>
+        <span class="badge badge-green">💨 PM2.5 · NO2 · O3</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # ============================================================
 # TABS — 6 tabs with full insight coverage
@@ -730,5 +1055,11 @@ with tab6:
 # FOOTER
 # ============================================================
 
-st.markdown("---")
-st.caption("🌍 Data source: WHO Air Quality & Health Dataset · 37 countries · 973 cities · 3 pollutants · 2022 · WHO 2021 AQG Baseline")
+st.markdown("""
+<hr/>
+<div style="text-align:center; font-size:0.75rem; color:#3f6ea0; padding: 8px 0 4px 0;">
+    📂 <strong style="color:#5a7a9f;">Data Source:</strong> WHO Air Quality & Health Dataset &nbsp;·&nbsp;
+    40 Countries &nbsp;·&nbsp; 977 Cities &nbsp;·&nbsp; 3 Pollutants &nbsp;·&nbsp;
+    Reference Year 2022 &nbsp;·&nbsp; WHO 2021 AQG Baseline
+</div>
+""", unsafe_allow_html=True)
