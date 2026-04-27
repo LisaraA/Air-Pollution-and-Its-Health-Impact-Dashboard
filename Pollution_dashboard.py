@@ -3,9 +3,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-# ============================================================
-# PAGE CONFIG
-# ============================================================
+# Page Layout
 
 st.set_page_config(
     page_title="Air Pollution & Health Impact Dashboard",
@@ -14,9 +12,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ============================================================
-# CUSTOM CSS
-# ============================================================
+# Custom CC
 
 st.markdown("""
 <style>
@@ -152,9 +148,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ============================================================
-# LOAD & PREPARE DATA
-# ============================================================
+# Load and prepare data
 
 @st.cache_data
 def load_data():
@@ -189,9 +183,7 @@ df_cities = df_raw[
     (~df_raw["Outcome"].isin(OUTCOME_EXCLUDE))
 ].copy()
 
-# ============================================================
-# SIDEBAR FILTERS
-# ============================================================
+# Sidebar Filters
 
 with st.sidebar:
     st.markdown("""
@@ -228,7 +220,6 @@ with st.sidebar:
     indicator_opts = sorted(df_raw["Health Indicator"].dropna().unique().tolist())
     sel_indicator = st.multiselect("Health Indicator", options=indicator_opts)
 
-    # Derive correct counts from data
     n_countries = df_country["Country Or Territory"].nunique()
     n_cities    = df_cities["City Or Territory"].nunique()
 
@@ -244,9 +235,7 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-# ============================================================
-# APPLY FILTERS — empty list = no filter (show all)
-# ============================================================
+# Apply filters (no filter = show all)
 
 def apply_filters(base_df):
     d = base_df.copy()
@@ -265,9 +254,8 @@ dal_country = filtered_country[filtered_country["Health Indicator"] == "Disabili
 yld_country = filtered_country[filtered_country["Health Indicator"] == "Years Lived with Disability (YLD)"]
 ad_cities   = filtered_cities[filtered_cities["Health Indicator"] == "Attributable deaths (AD)"]
 
-# ============================================================
-# HELPERS
-# ============================================================
+
+# Background 
 
 def fmt(n):
     if pd.isna(n) or n == 0:
@@ -285,9 +273,7 @@ DARK = dict(
 )
 ACCENT = ["#4f8ef7", "#f7914f", "#7c4ff7", "#4fd97c", "#f74f6e", "#f7d44f", "#4fd4f7"]
 
-# ============================================================
-# PAGE HEADER
-# ============================================================
+# Page header
 
 st.markdown("""
 <div style="text-align:center; padding: 8px 0 48px 0; margin-top:-40px;">
@@ -301,9 +287,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ============================================================
-# TABS
-# ============================================================
+# Tabs
 
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "📊 Overview",
@@ -314,9 +298,8 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "🏙️ City Drilldown",
 ])
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# TAB 1 — OVERVIEW
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Tab 01 — Overview
+
 with tab1:
 
     st.markdown("""
@@ -362,8 +345,7 @@ with tab1:
 
     st.markdown("---")
 
-    # FIX: Pollutant averages now use filtered_country so sidebar filters apply
-    pm25 = filtered_country[(filtered_country["Air Pollutant"] == "PM2.5") & (filtered_country[PW_COL] < 500)][PW_COL].mean()
+       pm25 = filtered_country[(filtered_country["Air Pollutant"] == "PM2.5") & (filtered_country[PW_COL] < 500)][PW_COL].mean()
     no2  = filtered_country[(filtered_country["Air Pollutant"] == "NO2")   & (filtered_country[PW_COL] < 500)][PW_COL].mean()
     o3   = filtered_country[(filtered_country["Air Pollutant"] == "O3")    & (filtered_country[PW_COL] < 500)][PW_COL].mean()
     _pm25v = f"{pm25:.1f}" if pd.notna(pm25) else "N/A"
@@ -405,7 +387,6 @@ with tab1:
     </div>
     """, unsafe_allow_html=True)
 
-    # FIX: Dynamic insight values derived from filtered data
     pm25_ratio = f"~{round(pm25/5, 1)}×"  if pd.notna(pm25) else "N/A"
     no2_ratio  = f"~{round(no2/10, 1)}×" if pd.notna(no2)  else "N/A"
     o3_val     = f"~{_o3v} µg/m³"         if pd.notna(o3)   else "N/A"
@@ -503,10 +484,8 @@ with tab1:
     </div>
     """, unsafe_allow_html=True)
 
+# Tab 02 - Geographic
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# TAB 2 — GEOGRAPHIC
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab2:
 
     col_map1, col_map2 = st.columns(2)
@@ -615,9 +594,8 @@ with tab2:
     """, unsafe_allow_html=True)
 
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# TAB 3 — DISEASE BREAKDOWN
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Tab 03 — Disease Breakdown
+
 with tab3:
 
     st.markdown('<div class="sec-heading"><span class="sec-icon">🧬</span><span class="sec-text">Pollutant × Disease Heatmap — Which Pollutant Causes Which Disease?</span></div>', unsafe_allow_html=True)
@@ -653,12 +631,10 @@ with tab3:
 
     st.markdown("---")
 
-    # FIX: Removed 🍩 icon from heading (was left in by mistake), use pie chart icon instead
     st.markdown('<div class="sec-heading"><span class="sec-icon">📊</span><span class="sec-text">Disease Outcome Split — Share of Deaths</span></div>', unsafe_allow_html=True)
     outcome_agg = ad_country.groupby("Outcome")["Value"].sum().reset_index()
 
-    # FIX: Use ACCENT palette — readable on dark background (Blues_r starts too dark)
-    fig_donut = px.pie(
+        fig_donut = px.pie(
         outcome_agg, values="Value", names="Outcome",
         hole=0.55,
         color_discrete_sequence=ACCENT,
@@ -734,10 +710,8 @@ with tab3:
     </div>
     """, unsafe_allow_html=True)
 
+# Tab 04 — Age and Vulnerability
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# TAB 4 — AGE & VULNERABILITY
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab4:
 
     _AGE_ORDER_RISK = ["< 19 years of age", ">= 19 years of age",
@@ -764,7 +738,6 @@ with tab4:
     )
     age_agg = age_agg.sort_values("_order").drop(columns="_order")
 
-    # FIX: Use barmode="group" — overlay caused bars to stack on top of each other
     fig_age = go.Figure()
     for _, row in age_agg.iterrows():
         fig_age.add_trace(go.Bar(
@@ -832,9 +805,8 @@ with tab4:
     """, unsafe_allow_html=True)
 
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# TAB 5 — DEATH vs DISABILITY (YLL vs YLD)
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Tab 05 — Death VS Disability (YLL vs YLD)
+
 with tab5:
 
     st.markdown('<div class="sec-heading"><span class="sec-icon">⚖️</span><span class="sec-text">Premature Death vs Long-Term Disability — by Disease</span></div>', unsafe_allow_html=True)
@@ -890,10 +862,8 @@ with tab5:
     </div>
     """, unsafe_allow_html=True)
 
+# Tab 06 — City Drilldown
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# TAB 6 — CITY DRILLDOWN
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab6:
 
     st.markdown('<div class="sec-heading"><span class="sec-icon">🏙️</span><span class="sec-text">City-Level Drilldown — Top 100 Cities by Burden per 100k</span></div>', unsafe_allow_html=True)
@@ -924,12 +894,8 @@ with tab6:
     )
     st.dataframe(table_df, use_container_width=True, height=500)
 
+# Footer
 
-# ============================================================
-# FOOTER
-# ============================================================
-
-# Derive counts dynamically for accuracy
 _n_countries = df_country["Country Or Territory"].nunique()
 _n_cities    = df_cities["City Or Territory"].nunique()
 
